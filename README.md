@@ -18,12 +18,14 @@ I work mainly with TypeScript, React, Next.js, React Three Fiber, and Three.js. 
 - [agent-skills-lab](https://github.com/YT-TechDev/agent-skills-lab) — A public lab for designing, evaluating, versioning, and packaging reusable AI agent skills and engineering workflows.
 - [engineering-agents](https://github.com/YT-TechDev/engineering-agents) — Documentation-only guidance, templates, and checklists for scoped AI-assisted engineering planning and review workflows.
 
-## Technology
+## Selected technologies
 
-- **Languages:** TypeScript, JavaScript, C++
-- **Web:** React, Next.js, React Three Fiber, Three.js
-- **Desktop and local-first:** Electron, local runtime boundaries, browser-based previews
-- **Engineering:** developer tools, documentation systems, validation workflows, AI-assisted software development
+- **Frontend:** TypeScript, React, Next.js, Tailwind CSS, Framer Motion
+- **3D and interactive web:** React Three Fiber, Three.js
+- **Backend and data:** Supabase, PostgreSQL, Resend
+- **Desktop and native:** Electron, Node.js, C++ development and learning
+- **Infrastructure:** Vercel, Cloudflare, Docker, Kubernetes fundamentals, AWS, Google Cloud
+- **Engineering:** OSS maintenance, library design, documentation systems, CI, local-first architecture, and AI-assisted development
 
 ## Development principles
 
