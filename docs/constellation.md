@@ -38,3 +38,10 @@ The renderer supports all three sections, but this phase runs **`python scripts/
 - [ ] Confirm labels, clipping, MoonBit illustrative mark and color contrast
 
 Do not merge before visual approval. No changes to public profile main until the PR is merged.
+
+### Language-only visual refinement
+
+- HTML5 and CSS3 shields now use complete vector paths from Devicon pinned at `6a37858047b0e8d9c9c0e68f4a071fc410652e89`; the original portfolio SVG paths remain available in the frozen snapshot. This fixes incomplete internal numerals.
+- TypeScript uses an optically enlarged, softly rounded **illustrative TS monogram**; the pinned upstream SVG still remains in the supplemental dataset for provenance.
+- VBScript uses a neutral, explicitly labeled VBS outline rather than reusing an IDE trademark. Its original portfolio paths remain stored.
+- No visual changes to the Frameworks or Tools generated assets in this phase.

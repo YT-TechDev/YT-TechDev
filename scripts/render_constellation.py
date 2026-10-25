@@ -106,20 +106,35 @@ def glyph_svg(key: str, originals: dict, extras: dict) -> str:
         )
         return (base + ' viewBox="0 0 120 120">' + rings
                 + '<circle cx="60" cy="60" r="7" fill="white"/></svg>')
-    if key in ("html", "css", "java", "vbscript"):
-        # Exact view boxes for the original portfolio SVG path datasets.
-        source_key = "vbs" if key == "vbscript" else key
-        view_box = {
-            "html": "0 0 124 142",
-            "css": "0 0 124 142",
-            "java": "0 0 265 360",
-            "vbscript": "0 0 96 96",
-        }[key]
-        paths = originals["paths"].get(source_key)
+    if key == "typescript":
+        # Readable TS monogram with gently rounded rectangular corners.
+        # The supplemental official SVG outline is retained in the data.
+        return (base + ' viewBox="0 0 180 150">'
+                '<rect x="17" y="10" width="146" height="129" rx="16" '
+                'stroke="white" stroke-width="6" fill="none"/>'
+                '<text x="90" y="105" text-anchor="middle" '
+                'font-family="sans-serif" font-size="79" font-weight="bold" '
+                'fill="white">TS</text></svg>')
+    if key in ("html", "css"):
+        # Devicon's complete shield paths preserve inner 5 / 3 cutouts.
+        if key not in extras:
+            raise ValueError(f"Missing Devicon shield: {key}")
+        return (base + ' viewBox="0 0 128 128">'
+                + f'<path fill="white" d="{extras[key]}"/></svg>')
+    if key == "vbscript":
+        # Portfolio VBS artwork resembles a Visual Studio mark, so use a
+        # neutral labeled wordmark instead of misattributing that trademark.
+        return (base + ' viewBox="0 0 220 150">'
+                '<rect x="12" y="16" width="196" height="112" rx="20" '
+                'fill="none" stroke="white" stroke-width="6"/>'
+                '<text x="110" y="99" text-anchor="middle" font-family="sans-serif" '
+                'font-size="76" font-weight="bold" fill="white">VBS</text></svg>')
+    if key == "java":
+        paths = originals["paths"].get("java")
         if not paths:
-            raise ValueError(f"Missing pinned portfolio path {source_key}")
+            raise ValueError("Missing portfolio Java outline")
         shapes = "".join(f'<path fill="white" d="{p}"/>' for p in paths)
-        return base + f' viewBox="{view_box}">' + shapes + "</svg>"
+        return base + ' viewBox="0 0 265 360">' + shapes + "</svg>"
     if key == "rust":
         return base + ' viewBox="0 0 24 24"><path fill="white" d="' + originals["rust_path"] + '"/></svg>'
     if key in extras:

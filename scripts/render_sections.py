@@ -253,6 +253,10 @@ def main():
         raise ValueError("Portfolio path revision changed; review required")
     if extras["revision"] != "90646e4bf7f3b89df6c37e65baf3e7bc759a517c":
         raise ValueError("Supplemental paths changed; review required")
+    # Devicon's pinned, normalized 128×128 HTML5/CSS3 shields.
+    if extras.get("devicon_revision") != "6a37858047b0e8d9c9c0e68f4a071fc410652e89":
+        raise ValueError("Unexpected Devicon source revision")
+    extras["paths"].update(extras["devicon_paths"])
     total = sum(len(s["icons"]) for s in SECTIONS.values())
     keys = [row[0] for section in SECTIONS.values() for row in section["icons"]]
     if total != 25 or len(set(keys)) != total:
