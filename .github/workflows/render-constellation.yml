@@ -38,8 +38,6 @@ jobs:
   render:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      PYTHONPYCACHEPREFIX: ${{ runner.temp }}/constellation-pycache
     permissions:
       contents: write
     steps:
@@ -49,6 +47,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Keep Python bytecode outside the checkout
+        run: echo "PYTHONPYCACHEPREFIX=$RUNNER_TEMP/constellation-pycache" >> "$GITHUB_ENV"
       - name: Install renderer dependencies
         run: python -m pip install -r scripts/requirements.txt
       - name: Select isolated section generation
