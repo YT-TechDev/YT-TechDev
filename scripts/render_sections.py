@@ -149,8 +149,8 @@ def prepared_nodes(section_id, cfg, originals, extras):
             samples = sample_outline(key, originals, extras, count, rng)
         if key == "typescript" and section_id == "languages":
             # The TS glyph previously appeared smaller; round its raster edges
-            # in the source sampler and normalize optical scale.
-            samples = [(x * 1.18, y * 1.18) for x, y in samples]
+            # in the source sampler and normalize optical scale with label clearance.
+            samples = [(x * 1.04, y * 1.04) for x, y in samples]
         columns = cfg.get("columns", COLUMNS)
         nodes.append((key, label, category, color, tag, columns[i % len(columns)],
                       cfg["rows"][i // len(columns)], samples))
