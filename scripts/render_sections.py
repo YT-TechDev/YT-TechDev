@@ -7,13 +7,16 @@ snapshot. All renders are offline, deterministic and README-compatible.
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import math
 import random
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from PIL import Image, ImageChops, ImageDraw, ImageFilter
-from render_constellation import font, sample_outline
+import cairosvg
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageOps
+from render_constellation import font, glyph_svg, sample_outline
 
 ROOT = Path(__file__).resolve().parents[1]
 WIDTH = 1200
@@ -239,7 +242,37 @@ def sample_official_moonbit(count, rng):
     return [choices[i % len(choices)] for i in range(count)]
 
 
-def prepared_nodes(section_id, cfg, originals, extras):
+def sample_language_wordmark(key, originals, extras, count):
+    """Keep the existing TS/VBS letters, without their enclosing rectangle."""
+    svg = ET.fromstring(glyph_svg(key, originals, extras))
+    frames = svg.findall("{http://www.w3.org/2000/svg}rect")
+    if len(frames) != 1:
+        raise ValueError(f"Expected one enclosing frame for {key}")
+    svg.remove(frames[0])
+    binary = cairosvg.svg2png(bytestring=ET.tostring(svg),
+                             output_width=560, output_height=560)
+    alpha = Image.open(io.BytesIO(binary)).convert("RGBA").getchannel("A")
+    bounds = alpha.getbbox()
+    if bounds is None:
+        raise ValueError(f"Empty wordmark: {key}")
+    alpha = alpha.crop(bounds)
+    alpha.thumbnail((150, 121), Image.Resampling.LANCZOS)
+    if key == "typescript":
+        alpha = alpha.filter(ImageFilter.GaussianBlur(.85))
+    alpha = ImageOps.expand(alpha, border=6, fill=0)
+    edge = ImageChops.subtract(alpha, alpha.filter(ImageFilter.MinFilter(5)))
+    w, h = alpha.size
+    pixels = edge.load()
+    choices = [(x - w / 2, y - h / 2) for y in range(h) for x in range(w)
+               if pixels[x, y] > 30]
+    if len(choices) < 100:
+        raise ValueError(f"Incomplete wordmark: {key}")
+    # Isolated sampling leaves all subsequent icons' particle RNG untouched.
+    random.Random(SEED + sum(map(ord, key))).shuffle(choices)
+    return [choices[i % len(choices)] for i in range(count)]
+
+
+def prepared_nodes(section_id, cfg, originals, extras, *, wordmarks=True):
     rng = random.Random(SEED + len(section_id) * 23)
     nodes = []
     for i, (key, label, category, color, tag) in enumerate(cfg["icons"]):
@@ -248,7 +281,11 @@ def prepared_nodes(section_id, cfg, originals, extras):
         if key == "moonbit":
             samples = sample_official_moonbit(count, rng)
         else:
+            # Consume the original sampling RNG even when replacing a wordmark;
+            # later icons must retain their exact particle placement and pulse.
             samples = sample_outline(key, originals, extras, count, rng)
+        if wordmarks and section_id == "languages" and key in ("typescript", "vbscript"):
+            samples = sample_language_wordmark(key, originals, extras, count)
         if key == "typescript" and section_id == "languages":
             # The TS glyph previously appeared smaller; round its raster edges
             # in the source sampler and normalize optical scale with label clearance.
@@ -365,7 +402,12 @@ def render_section(section_id, original, extra, frames):
     if section_id == "languages":
         # One palette keeps static nebula/dust pixels identical in every frame.
         # No error-diffusion noise, extra background motion or palette shimmer.
-        palette = poster.quantize(colors=256, method=Image.Quantize.MEDIANCUT)
+        # Retain the approved framed poster only as a color-table reference;
+        # rebuilding a palette from the new letters would recolor other pixels.
+        palette_nodes = prepared_nodes(section_id, cfg, original, extra["paths"],
+                                       wordmarks=False)
+        palette_poster = render_frame(section_id, cfg, bg, palette_nodes, 0, freeze=True)
+        palette = palette_poster.quantize(colors=256, method=Image.Quantize.MEDIANCUT)
         animation = [frame.quantize(palette=palette, dither=Image.Dither.NONE)
                      for frame in animation]
     animation[0].save(
