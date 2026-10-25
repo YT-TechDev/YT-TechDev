@@ -6,7 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/YT-TechDev/YT-TechDev/tree/main/assets">
-    <img src="./assets/constellation.svg" alt="Particle skill constellation: React, TypeScript, R3F, Next.js, JavaScript, Node.js, Docker, PostgreSQL, Python, Cloudflare, Git, and Rust (exploring). Brightness represents project activity, not proficiency." width="100%" />
+    <img src="./assets/constellation.gif" alt="Particle skill constellation: React, TypeScript, R3F, Next.js, JavaScript, Node.js, Docker, PostgreSQL, Python, Cloudflare, Git, and Rust (exploring). Brightness represents project activity, not proficiency." width="100%" />
   </a>
 </p>
 
@@ -38,7 +38,7 @@
 
 The artwork is generated from technology-logo outlines taken from a pinned revision of my [portfolio's particle icon assets](https://github.com/YT-TechDev/yt-techdev-portfolio/blob/6e4ea4fdbea13d57e7eb4f0f120452a2baf63a27/components/home/Skills/particle/svgPaths.ts), plus the Rust icon from [Simple Icons](https://github.com/simple-icons/simple-icons).
 
-The source data and renderer live in this profile repository. Regeneration is repeatable and does not require React in the README. GitHub README pages cannot execute arbitrary React/TSX or WebGL. An animated GIF can be generated from the same renderer; the committed SVG is the lightweight, always-visible fallback.
+The source data and renderer live in this profile repository. Regeneration is repeatable and does not require React in the README. GitHub README pages cannot execute arbitrary React/TSX or WebGL. The README displays the generated GIF; a lightweight static SVG and PNG are also retained.
 
 Labels refer to public projects, usage and areas of exploration. They do not assert levels of competence or measure GitHub activity automatically.
 
