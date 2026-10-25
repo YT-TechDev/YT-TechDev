@@ -108,7 +108,7 @@ def glyph_svg(key: str, originals: dict, extras: dict) -> str:
     size = max(max(numbers, default=24) * 1.8, 28)
     offset = -size * .14
     shapes = "".join(f'<path fill="white" d="{p}"/>' for p in paths)
-    return base + f' viewBox="{offset:.2f} {offset:.2f} {size:.2f}">' + shapes + '</svg>'
+    return base + f' viewBox="{offset:.2f} {offset:.2f} {size:.2f} {size:.2f}">' + shapes + '</svg>'
 
 
 def sample_outline(key, originals, extras, count, rng):
