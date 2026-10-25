@@ -106,6 +106,20 @@ def glyph_svg(key: str, originals: dict, extras: dict) -> str:
         )
         return (base + ' viewBox="0 0 120 120">' + rings
                 + '<circle cx="60" cy="60" r="7" fill="white"/></svg>')
+    if key in ("html", "css", "java", "vbscript"):
+        # Exact view boxes for the original portfolio SVG path datasets.
+        source_key = "vbs" if key == "vbscript" else key
+        view_box = {
+            "html": "0 0 124 142",
+            "css": "0 0 124 142",
+            "java": "0 0 265 360",
+            "vbscript": "0 0 96 96",
+        }[key]
+        paths = originals["paths"].get(source_key)
+        if not paths:
+            raise ValueError(f"Missing pinned portfolio path {source_key}")
+        shapes = "".join(f'<path fill="white" d="{p}"/>' for p in paths)
+        return base + f' viewBox="{view_box}">' + shapes + "</svg>"
     if key == "rust":
         return base + ' viewBox="0 0 24 24"><path fill="white" d="' + originals["rust_path"] + '"/></svg>'
     if key in extras:
