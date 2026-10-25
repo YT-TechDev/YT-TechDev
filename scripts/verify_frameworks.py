@@ -22,18 +22,21 @@ from framework_orbits import (
     LABEL_OFFSET, LABEL_SIZE, ORBITS, SIZE, ORIGINAL_KEYS,
     EXPANSION_FIXTURE, EXPANSION_SHA256, QuietOrbits, floating_offset,
     global_palette, light_angle, logo_envelope, particle_pulse, prepared_contours,
+    REFINEMENT_FIXTURE, REFINEMENT_SHA256, PRESERVED_KEYS, refinement_fixture,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-NAMES = ("React", "Next.js", "Node.js", "R3F", "Three.js", "WebAssembly",
+NAMES = ("React", "Next.js", "Node.js", "R3F", "Three.js", "Vue.js",
          "Google Apps Script", "TailwindCSS", "Bootstrap", "Framer Motion",
-         "jQuery", "SpringBoot", "Rust crate")
-KEYS = ORIGINAL_KEYS + ("googleappsscript", "tailwindcss", "bootstrap", "framermotion",
-                        "jquery", "springboot", "rustcrate")
-COLORS = ("#79f1ff", "#f1f3fd", "#a9efb8", "#dcc2ff", "#c6e9f9", "#b7bdff",
-          "#9ec7ff", "#80e5ef", "#c9a4ff", "#f3df83", "#7acef4", "#a5dd83", "#edab8f")
+         "jQuery", "Prisma")
+KEYS = ("react", "nextjs", "nodejs", "r3f", "threedotjs", "vue", "googleappsscript",
+        "tailwindcss", "bootstrap", "framermotion", "jquery", "prisma")
+COLORS = ("#79f1ff", "#f1f3fd", "#a9efb8", "#dcc2ff", "#c6e9f9", "#42b883",
+          "#4285f4", "#80e5ef", "#c9a4ff", "#f3df83", "#7acef4", "#edf3ff")
 POSITIONS = ((215,191),(600,191),(985,191),(215,431),(600,431),(985,431),
-             (215,671),(600,671),(985,671),(170,911),(460,911),(750,911),(1040,911))
+             (215,671),(600,671),(985,671),(215,911),(600,911),(985,911))
+RGB_FIXTURE = ROOT / "scripts/framework_preserved_rgb.json"
+RGB_SHA256 = "a9d550ffa38d680c4ff5e66967f5bc78c9c10d3177338d8a2ed6926748d8fd1d"
 PROTECTED_BLOBS = {
     "assets/constellation-languages.gif": "9f5a84ddae394f44992215c59a4271e37a932fb4",
     "assets/constellation-languages.png": "50ae288464fd4e9de3db5bc69d3b479ebf88b385",
@@ -56,8 +59,8 @@ def load_renderer():
     extra = json.loads((ROOT/"data/supplemental-icons.json").read_text())
     extra["paths"].update(extra["devicon_paths"])
     cfg = sections.SECTIONS["frameworks"]
-    sources = {n[0]: sections.glyph_svg(n[0], original, extra["paths"])
-               for n in cfg["icons"] if n[0] in ORIGINAL_KEYS}
+    sources = {key: sections.glyph_svg(key, original, extra["paths"])
+               for key in ORIGINAL_KEYS}
     nodes = prepared_contours(cfg, sections.COLUMNS, sources)
     return QuietOrbits(cfg, nodes, sections.font, sections.ACTIVITY_BRIGHTNESS)
 
@@ -102,8 +105,8 @@ def verify_palette_tables(gif):
 def verify_structure(renderer):
     nodes = renderer.nodes
     assert tuple(n[0] for n in nodes) == KEYS
-    assert len(nodes) == 13 and len({n[1] for n in nodes}) == 13
-    assert tuple(n[1] for n in nodes) == NAMES, "Thirteen names/order changed"
+    assert len(nodes) == 12 and len({n[1] for n in nodes}) == 12
+    assert tuple(n[1] for n in nodes) == NAMES, "Twelve names/order changed"
     assert tuple(n[3] for n in nodes) == COLORS, "Original logo colors changed"
     assert tuple((n[5], n[6]) for n in nodes) == POSITIONS
     assert len(ORBITS) == 2
@@ -112,28 +115,49 @@ def verify_structure(renderer):
     fixture = json.loads(FIXTURE.read_text())
     assert sha256(EXPANSION_FIXTURE) == EXPANSION_SHA256
     added = json.loads(EXPANSION_FIXTURE.read_text())
-    assert tuple(added["points"]) == KEYS[6:]
+    assert tuple(added["points"]) == ("googleappsscript", "tailwindcss", "bootstrap",
+                                    "framermotion", "jquery", "springboot", "rustcrate"), "Historical expansion fixture changed"
+    refined = refinement_fixture()
+    assert sha256(REFINEMENT_FIXTURE) == REFINEMENT_SHA256
+    from build_framework_refinement import build
+    assert build() == REFINEMENT_FIXTURE.read_bytes(), "Brand source/contour derivation changed"
     assert all(len(n[-1]) == 1000 for n in nodes), "Missing contour samples"
     for node in nodes:
         key, *_, points = node
-        expected = fixture["points"] if key in ORIGINAL_KEYS else added["points"]
+        expected = (refined["points"] if key in refined["points"] else
+                    fixture["points"] if key in ORIGINAL_KEYS else added["points"])
         assert [list(p) for p in points] == expected[key], f"Coordinates changed: {key}"
         assert len(set(points)) >= 180, f"Degenerate symbol: {key}"
         assert all(math.isfinite(v) and abs(v) <= 80 for point in points for v in point)
-        if key not in ORIGINAL_KEYS:
+        if key not in ORIGINAL_KEYS and key not in refined["points"]:
             assert added["references"][key].startswith("https://") and added["descriptions"][key]
+        if key in refined["points"]:
+            assert len(renderer.sample_colors[key]) == 1000
+            assert renderer.sample_colors[key] == refined["colors"][key]
+    assert set(renderer.sample_colors) == {"vue", "googleappsscript", "prisma"}
+    assert set(renderer.sample_colors["googleappsscript"]) == {"#ea4335", "#fbbc04", "#34a853", "#4285f4", "#ffffff"}
+    assert set(renderer.sample_colors["vue"]) == {"#42b883", "#80c7c6"}
 
-    texts = []
+    texts, lines = [], []
     original_text = ImageDraw.ImageDraw.text
+    original_line = ImageDraw.ImageDraw.line
 
     def record_text(draw, xy, text, *args, **kwargs):
         texts.append((xy, text, kwargs))
         return original_text(draw, xy, text, *args, **kwargs)
 
-    with patch.object(ImageDraw.ImageDraw, "text", record_text):
+    def record_line(draw, xy, *args, **kwargs):
+        lines.append(xy)
+        return original_line(draw, xy, *args, **kwargs)
+
+    with patch.object(ImageDraw.ImageDraw, "text", record_text), \
+         patch.object(ImageDraw.ImageDraw, "line", record_line):
         black = renderer.foreground(Image.new("RGB", SIZE), 0, freeze=True)
-    assert [t for _, t, _ in texts][3:16] == list(NAMES)
-    assert len(texts) == 18, "Unexpected labels or badges"
+    assert [t for _, t, _ in texts][3:] == list(NAMES)
+    assert [t for _, t, _ in texts][:3] == ["YT-TECHDEV   /   SKILL CONSTELLATION", sections.SECTIONS["frameworks"]["title"], "FROM WEB FRAMEWORKS TO WASM EXECUTION"]
+    assert len(texts) == 15, "Unexpected footer, labels or badges"
+    assert not lines, "Frameworks footer rule must be absent"
+    assert [key for key, _ in renderer.protection_boxes].count("footer") == 0
     draw = ImageDraw.Draw(black)
     gaps, silhouettes, geometry = [], {}, []
     for node in nodes:
@@ -167,9 +191,22 @@ def verify_structure(renderer):
         assert options["font"].path, "Unexpected default font fallback"
     assert ImageChops.multiply(renderer.keep, renderer.protected).getbbox() is None
     assert ImageChops.multiply(renderer.structure.getchannel("A"), renderer.protected).getbbox() is None
+    assert sha256(RGB_FIXTURE) == RGB_SHA256, "Preserved RGB baseline changed"
+    rgb_fixture = json.loads(RGB_FIXTURE.read_text())
+    preserved_rgb = {}
+    for key in PRESERVED_KEYS:
+        local = copy.copy(renderer)
+        local.nodes = [(*n[:5], *((200,300) if n[0] == key else (-10000,-10000)), n[-1]) for n in nodes]
+        layers = [local.foreground(Image.new("RGB", SIZE), 0, True)]
+        layers += [local.foreground(Image.new("RGB", SIZE), p) for p in rgb_fixture["phases"]]
+        hashes = [hashlib.sha256(layer.crop(rgb_fixture["crop"]).tobytes()).hexdigest() for layer in layers]
+        assert hashes == rgb_fixture["rgb_sha256"][key], f"Preserved local source RGB changed: {key}"
+        preserved_rgb[key] = hashes
     return {"inventory": list(NAMES), "positions": list(POSITIONS),
             "minimum_logo_name_gap_px": min(gaps), "logo_masks_sha256": silhouettes,
-            "original_fixture_sha256": sha256(FIXTURE), "expansion_fixture_sha256": sha256(EXPANSION_FIXTURE)}
+            "original_fixture_sha256": sha256(FIXTURE), "expansion_fixture_sha256": sha256(EXPANSION_FIXTURE),
+            "refinement_fixture_sha256": sha256(REFINEMENT_FIXTURE), "preserved_local_rgb_sha256": preserved_rgb,
+            "foreground_text_calls": len(texts), "foreground_line_calls": len(lines)}
 
 
 def verify_assets(renderer, assets):
@@ -181,7 +218,7 @@ def verify_assets(renderer, assets):
     assert ImageChops.difference(poster, renderer.render(0, freeze=True)).getbbox() is None, "PNG content mismatch"
     assert gif.stat().st_size <= 3_500_000, "GIF exceeds approved preferred size"
 
-    for i in range(13):
+    for i in range(len(NAMES)):
         assert all(abs(a-b) < 1e-10 for a,b in zip(floating_offset(i, 0),floating_offset(i,math.tau)))
         for n in (0, 499, 999):
             assert abs(particle_pulse(i,n,0)-particle_pulse(i,n,math.tau)) < 1e-10
@@ -264,6 +301,11 @@ def verify_negative_controls(renderer):
     bad.nodes = list(renderer.nodes)
     n = list(bad.nodes[9]); n[1] = "FramerNotion"; bad.nodes[9] = tuple(n)
     reject("incorrect technology identity", lambda: verify_structure(bad))
+    for index, name in ((5,"WebAssembly"),(11,"Rust crate"),(11,"SpringBoot")):
+        bad = copy.copy(renderer)
+        bad.nodes = list(renderer.nodes)
+        n = list(bad.nodes[index]); n[1] = name; bad.nodes[index] = tuple(n)
+        reject("removed technology restored: "+name, lambda: verify_structure(bad))
     bad = copy.copy(renderer)
     bad.nodes = list(renderer.nodes)
     n = list(bad.nodes[6]); n[-1] = []; bad.nodes[6] = tuple(n)
@@ -271,8 +313,19 @@ def verify_negative_controls(renderer):
     bad = copy.copy(renderer)
     bad.keep = Image.new("L", SIZE, 255)
     reject("disabled protection mask", lambda: verify_structure(bad))
+    bad = copy.copy(renderer)
+    bad.sample_colors = {**renderer.sample_colors, "react": ["#ffffff"]*1000}
+    reject("preserved source RGB recolored", lambda: verify_structure(bad))
+    bad = copy.copy(renderer)
+    def footer_restored(image, phase, freeze=False):
+        image = renderer.foreground(image, phase, freeze)
+        ImageDraw.Draw(image).line((43, SIZE[1]-39, 1158, SIZE[1]-39), fill=(29,67,93))
+        return image
+    bad.foreground = footer_restored
+    reject("Frameworks footer restored", lambda: verify_structure(bad))
     with tempfile.TemporaryDirectory(prefix="contour-negative-") as directory:
-        for attr, source in (("FIXTURE", FIXTURE), ("EXPANSION_FIXTURE", EXPANSION_FIXTURE)):
+        for attr, source in (("FIXTURE", FIXTURE), ("EXPANSION_FIXTURE", EXPANSION_FIXTURE),
+                             ("REFINEMENT_FIXTURE", REFINEMENT_FIXTURE)):
             tampered = Path(directory)/source.name
             data = json.loads(source.read_text())
             key = next(iter(data["points"]))

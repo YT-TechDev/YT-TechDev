@@ -4,20 +4,20 @@ This profile embeds generated GIFs, since GitHub README markdown cannot run Reac
 
 ## Layout and editorial choices
 
-The previous 20-node poster was difficult to read on phones, especially the bottom two rows. The three sections now contain **32 nodes** into three independently generated star maps:
+The previous 20-node poster was difficult to read on phones, especially the bottom two rows. The three sections now contain **31 nodes** into three independently generated star maps:
 
 - **Languages & Markup (10):** HTML, CSS, JavaScript, TypeScript, VBScript, Python, Java, MoonBit, C++, Rust (ordered from frontend/web through scripting toward backend/systems)
-- **Frameworks & Runtimes (13):** React, Next.js, Node.js, R3F, Three.js, WebAssembly, Google Apps Script, TailwindCSS, Bootstrap, Framer Motion, jQuery, SpringBoot, Rust crate
+- **Frameworks & Runtimes (12):** React, Next.js, Node.js, R3F, Three.js, Vue.js, Google Apps Script, TailwindCSS, Bootstrap, Framer Motion, jQuery, Prisma
 - **Tools & Platforms (9):** PostgreSQL, Docker, Git, Cloudflare, Linux, VS Code, Blender, ChatGPT, Claude
 
-Frameworks now uses **Quiet Orbits / Structure**, with two shared elliptical paths behind thirteen symbols, including the original six unchanged particle contours. Tools retains its original three-column layout and awaits its Space Station / Observatory design phase. The completed Languages image is a distinct 5-column × 2-row, 1600×780 layout, arranged for left-to-right frontend → backend reading. It displays only particle icons and language names, without secondary status labels or connector lines. Brightness is intentionally high across all groups and conveys **no proficiency ranking**. Internal activity metadata is retained: MoonBit is used in [Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow), based on the public MoonBit/WebAssembly runtime implementation; C++ and Rust remain Exploring. ChatGPT/Claude are explicitly AI tools, not programming languages.
+Frameworks now uses **Quiet Orbits / Structure**, with two shared elliptical paths behind twelve symbols, with nine approved particle contours unchanged. Tools retains its original three-column layout and awaits its Space Station / Observatory design phase. The completed Languages image is a distinct 5-column × 2-row, 1600×780 layout, arranged for left-to-right frontend → backend reading. It displays only particle icons and language names, without secondary status labels or connector lines. Brightness is intentionally high across all groups and conveys **no proficiency ranking**. Internal activity metadata is retained: MoonBit is used in [Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow), based on the public MoonBit/WebAssembly runtime implementation; C++ and Rust remain Exploring. ChatGPT/Claude are explicitly AI tools, not programming languages.
 
 ## Sources
 
 - Frozen portfolio outline dataset: `data/icon-paths.json` from `YT-TechDev/yt-techdev-portfolio` at `6e4ea4fdbea13d57e7eb4f0f120452a2baf63a27`.
 - Repaired TypeScript, PostgreSQL, Docker and Git outlines and other supplemental marks: `data/supplemental-icons.json` from Simple Icons pinned at `90646e4bf7f3b89df6c37e65baf3e7bc759a517c`.
 - MoonBit is extracted as **outline and interior-edge particle samples** from the official `moonbitlang/moonbit-docs` `next/_static/logo.png`, pinned to commit `50bbd2f59ba80ed046b6ecad57c7e8507ca06e9e` (repository copy `assets/moonbit-official.png`). The earlier illustrative crescent/M is no longer used for the Languages renderer.
-- React / Next.js / R3F / WebAssembly and VS Code / ChatGPT have illustrative symbols. Other normalized logo outlines come from the pinned sources.
+- React / Next.js / R3F and VS Code / ChatGPT have illustrative symbols. Other normalized logo outlines come from the pinned sources.
 
 Neither RAOS nor Assembly are listed. The portfolio source is referenced, not mutated.
 
@@ -37,62 +37,54 @@ Frozen Languages verification uses CairoSVG and system fonts/FreeType in additio
 ## Review gate
 
 - [ ] Exact final content passes the section-aware workflow and both verifiers
-- [ ] Inspect Quiet Orbits PNG/GIF, all thirteen identities, protected arcs and loop transition
+- [ ] Inspect Quiet Orbits PNG/GIF, all twelve identities, protected arcs and loop transition
 - [ ] Preview all three GIFs at phone width via the draft PR
 - [ ] Confirm labels, clipping, the official MoonBit contour and color contrast
 
 Do not merge before visual approval. No changes to public profile main until the PR is merged.
 
-## Frameworks expansion (October 26, 2026)
+## Frameworks final refinement (October 26, 2026)
 
-Quiet Orbits retains its deep navy, two shared cyan/violet ellipses, sparse static stars, slow light arcs and weightless symbols. The user explicitly resolved FramerNotion to **Framer Motion**. TailwindCSS, SpringBoot and Rust crate retain the requested display names. Rust crate is a generic language concept, not a named crate or official unique logo.
+Quiet Orbits retains its navy space, sparse stars, two shared cyan/violet orbits, restrained illumination and slow floating motion. Its subtitle remains `FROM WEB FRAMEWORKS TO WASM EXECUTION`, as requested; the subtitle describes the wider runtime narrative rather than the twelve labels.
 
-### Layout comparison and final geometry
+### Final layout
 
-Four actual renderer compositions were compared at native resolution and 320px:
+Canvas **1200×1110**; columns **X=215,600,985**; rows **Y=191,431,671,911**. Names remain **38px DejaVu Sans Bold**, centered **96px** below the marks. No global font reduction was needed for Google Apps Script: its full name fits with clear separation from TailwindCSS. Framer Motion and jQuery move to the new column centers; their contour-local ordered samples and colors remain unchanged.
 
-| Candidate | Canvas | Label font | At 320px | Assessment |
-| :-- | :-- | --: | --: | :-- |
-| A: 5 + 4 + 4 | 1200×860 | 28px | 7.47px | Fits; phone labels are small and the top row is crowded |
-| B: 4 + 5 + 4 | 1200×860 | 28px | 7.47px | Long middle-row names collide; rejected |
-| C: 7 + 6 | 1200×640 | 20px | 5.33px | Long names collide; too small; rejected |
-| D: 3 + 3 + 3 + 4 | 1200×1110 | 38px | 10.13px | Selected: original six retain two three-column rows, additions form two lower rows |
-
-Extra height avoids reducing the original 150×121 maximum symbol footprint. Names are 38px DejaVu Sans Bold, centered 96px below symbols, with 240px between row centers. All thirteen names remain single-line. Header/footer typography is preserved; the footer moves to the new bottom edge. Existing README width=100% integration remains suitable. At 375px the image is 375×347 and names scale to 11.875px; at 320px it is 320×296 with 10.13px names. These are simulated widths, not physical-device playback tests. The fourth row uses explicit positions to accommodate Framer Motion without colliding with adjacent names.
-
-| Technology | Center | Contour bounds (px) | Color |
+| Row | X=215 | X=600 | X=985 |
 | :-- | :-- | :-- | :-- |
-| React | (215, 191) | 135 × 120 | `#79f1ff` |
-| Next.js | (600, 191) | 120 × 120 | `#f1f3fd` |
-| Node.js | (985, 191) | 109 × 120 | `#a9efb8` |
-| R3F | (215, 431) | 149 × 57 | `#dcc2ff` |
-| Three.js | (600, 431) | 119 × 119 | `#c6e9f9` |
-| WebAssembly | (985, 431) | 148 × 106 | `#b7bdff` |
-| Google Apps Script | (215, 671) | 88 × 120 | `#9ec7ff` |
-| TailwindCSS | (600, 671) | 130 × 75.5 | `#80e5ef` |
-| Bootstrap | (985, 671) | 84.5 × 118.5 | `#c9a4ff` |
-| Framer Motion | (170, 911) | 129 × 80 | `#f3df83` |
-| jQuery | (460, 911) | 126 × 113 | `#7acef4` |
-| SpringBoot | (750, 911) | 113 × 108 | `#a5dd83` |
-| Rust crate | (1040, 911) | 110 × 120 | `#edab8f` |
+| Y=191 | React | Next.js | Node.js |
+| Y=431 | R3F | Three.js | Vue.js |
+| Y=671 | Google Apps Script | TailwindCSS | Bootstrap |
+| Y=911 | Framer Motion | jQuery | Prisma |
 
-Original anchors retain their integer parity: translating half-pixel samples by an odd number would change ties-to-even raster rounding. The original six ordered 1,000-point fixtures, binary raster hashes, colors and pulse functions remain exact. No original silhouette is resampled.
+The Frameworks-only foreground has exactly three header/subtitle text calls and twelve names. Both footer captions and its horizontal rule are removed without replacement. Canvas height, two orbital paths and top header remain unchanged. The lowest name ends around Y=1022, with calm lower padding and the existing continuous orbital arc. Languages and Tools footer paths are untouched.
 
-### New contour provenance
+At 375px the canvas becomes 375×347 and the labels have an effective 11.875px font size. At 320px it becomes 320×296, with effective 10.13px labels. These simulated previews support design review; real mobile-device playback is **UNVERIFIED**.
 
-The original `framework_contours.json` remains byte-identical, SHA-256 `03f39f7807a8a7ec3d496d167eaaeacdbdd81b74da63cfaf8f44e528cf418745`. Seven entries are additive in `framework_expansion_contours.json`, with version 1, original source polylines/cubic approximations, uniform arc-length samples rounded to half-pixels, fixed per-icon shuffle seed 847491, descriptions and official reference URLs. Both files are checked by SHA-256 before rendering. Production reads frozen points; no runtime resampling or font rasterization constructs symbols.
+### Official identity references and interpretations
 
-The new symbols are explicitly illustrative: folded script/document with brackets; paired Tailwind-inspired waves; B silhouette; diagonal Motion speed motif; jQuery-inspired curved swirls; Spring-family leaf; generic wireframe crate. They are not official trademark geometry. No downloaded logo asset or bitmap is redistributed. References: Apps Script overview, Tailwind brand page, Bootstrap brand page, Motion React docs, jQuery brand page, Spring Boot project page and Rust Book crate definition. Full URLs are recorded in the additive fixture. Pastel colors support navy contrast and are not claims of exact official color codes.
+All three new/redesigned marks are **unofficial particle adaptations**, not official downloadable logo assets or endorsements.
+
+- **Vue.js:** the two filled paths of the actual [Vue homepage logo](https://vuejs.org/) provide the nested V contours. The outer green `#42b883` is retained; the official inner `#35495e` is lifted to teal `#80c7c6` for dark-background contrast. Proportions and separated inner/outer edges are preserved; it is not a single V letter.
+- **Google Apps Script:** [Google Workspace's extension documentation](https://developers.google.com/workspace/extend) explicitly labels and links the [Apps Script v10 product icon](https://www.gstatic.com/images/branding/productlogos/apps_script/v10/192px.svg). Its four overlapping red/yellow/green/blue rounded arms and five white circles replace the historical generic code document. Sampling occurs after SVG occlusion, retaining visible component relationships without exposing hidden arm edges. Exact source fill colors are retained before the existing 0.96 activity brightness and pulse. White circular areas become particle rims, not solid white discs. [Apps Script overview](https://developers.google.com/apps-script) corroborates product identity. This symbol requires special human design approval.
+- **Prisma ORM:** the requested angular, faceted prism is the **historic** official mark. The supplied [presskit](https://github.com/prisma/presskit) changed to a new banded mark in August 2026 (`664e85e9950fa431d2e025202aeda758ff28d5ef`, merged August 26); that is not the faceted silhouette requested here. The source is therefore pinned to [Prisma-LightSymbol.svg at 13ee1c5](https://github.com/prisma/presskit/blob/13ee1c557d3dad9c036cdb1e2607c33ea90c2544/Assets/Prisma-LightSymbol.svg). The asymmetrical outer quadrilateral and inset slanted triangular cutout retain their official aspect ratio. Near-white `#edf3ff` particles replace the white fill. This intentionally represents Prisma ORM's recognizable legacy identity; it must not be described as the current official mark. The presskit permits standalone symbols alongside other brand symbols. No enclosing badge or generic equilateral triangle is added.
+
+The three exact vector references are stored in `scripts/framework_brand_sources/`. Their byte hashes, URLs, palette interpretation and fixed coordinates are recorded in `framework_refinement_contours.json`. `build_framework_refinement.py` derives only these three contours offline; it never rewrites historical contours or the shared sampler. It samples visible vector color boundaries at 2×, rounds to half-pixel coordinates and uses a fixed per-key shuffle. Production reads 1,000 frozen ordered samples per mark.
+
+### Immutable historical evidence and source RGB
+
+`framework_contours.json` remains byte-identical (SHA-256 `03f39f7807a8a7ec3d496d167eaaeacdbdd81b74da63cfaf8f44e528cf418745`), as does `framework_expansion_contours.json` (SHA-256 `b2e27c86ba99bb4c0946c4e1d7d3c522b00774d19faeaada8b25291969b99670`). The historical fixtures retain inactive WebAssembly, SpringBoot, Rust crate and the former code-document Apps Script samples solely for reproducibility. They do not define active inventory. The active renderer selects exactly twelve entries; the refined Apps Script fixture overrides its archived version.
+
+React, Next.js, Node.js, R3F, Three.js, TailwindCSS, Bootstrap, Framer Motion and jQuery retain all ordered local coordinates, colors and activity brightness. Five original active masks still match the independent historical binary silhouette hashes. `framework_preserved_rgb.json` additionally captures actual pre-change foreground crops from baseline `5cd6048516b6016789bb87267926a9abbb37e6a8`: nine marks × neutral plus four animated phases = **45 source RGB layer comparisons**. Both old and new renders use the same local anchor, avoiding palette changes or half-pixel rounding after a canvas translation being mistaken for a contour redesign.
 
 ### Orbits, encoding and validation
 
-The two shared ellipses expand to center (600,558), radii (560,430), rotation −8°, and center (606,570), radii (600,490), rotation 9°. This spans four rows while preserving Quiet Orbits. Fixed masks protect full continuous logo envelopes, names, header and footer. Orbital alpha is zero after glow/antialiasing inside every protected core. No instantaneous moving masks or per-symbol rings are introduced.
+The two shared ellipses remain center (600,558), radii (560,430), rotation −8°, and center (606,570), radii (600,490), rotation 9°. Static protection masks are recomputed from actual new contours, complete continuous drift, dot radius, rounding allowance, glow/antialias support, label boxes and the header. No removed footer core remains. Orbital and moving-light alpha are exactly zero in each protected core after glow/antialiasing. No moving masks, per-logo rings or arc redesign are introduced.
 
-Timing stays 64×100ms = 6.4 seconds, infinite loop. The deterministic five-phase common palette and disabled dithering remain. GIF disposal 1 plus lossless unchanged-pixel transparency optimization removes repeated static data. Every decoded frame must exactly match its intended palette-quantized source. Existing numerical limits remain: 3,500,000 bytes maximum, <8 foreground color error, ≥8px symbol/name clearance, ≤1.25× interior maximum at the seam and >500,000 checked static pixels.
+Timing remains **64×100ms = 6.4 seconds**, infinite loop, with one deterministic 256-color palette, no dithering and disposal 1. All real GIF frames must exactly match their intended palette-quantized RGB sources. The palette may change for multicolor Apps Script, so old GIF index equality is not an identity test. Source contours and the 45 unquantized RGB layers are checked separately. Existing gates remain: **3,500,000 bytes** maximum, **<8** foreground RGB error, **≥8px** logo/name clearance, seam **≤1.25×** the largest interior step and **>500,000** static pixels.
 
-The verifier checks exactly thirteen ordered names/keys/colors/anchors; finite nonempty 1,000-point fixtures; original coordinates and six binary raster hashes; all symbol/name rectangle pairs; full float and label protection; thirteen periodic functions; native/phone contrast; actual GIF timing and all decoded frames; decoded seams; RGB/decoded static backgrounds; two canonical regenerations; and preservation of all other files. Six negative controls reject a missing technology, incorrect identity, empty added contour, disabled protection, original fixture drift and expansion fixture drift.
-
-CI includes the additive fixture in Frameworks paths and selection. Existing Languages generation/verification, Tools guards, guarded bot write and serialized non-force pushes remain. README changes only Frameworks alt text: a six-item alt after expanding the image would omit seven technologies for assistive readers. All other README text is preserved. Historical geometry below describes the former six-item baseline, not the expansion.
+The verifier checks exact inventory/order/colors/anchors; immutable fixtures and reference hashes; offline contour derivation; all collision and clipping bounds; header and footer absence; full floating/label protection; all periodic endpoints; native/mobile contrast; all decoded frames/durations/palette tables; actual seam continuity; RGB and decoded background stability; and two complete deterministic canonical regenerations. Negative controls reject missing/incorrect/restored technologies, empty/drifting contours, disabled protection, recolored preserved source layers and a restored footer. CI adds only these Frameworks sources/fixtures to section selection, preserving Languages checks, Tools guards, concurrency and guarded non-force bot writes.
 
 ## Historical six-item Quiet Orbits baseline (October 25, 2026)
 

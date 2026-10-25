@@ -32,8 +32,26 @@ LIGHT_RADIUS = 8  # 5px glow plus the 3x -> 1x Lanczos filter's 3px support.
 FIXTURE = Path(__file__).with_name("framework_contours.json")
 CONTOUR_SHA256 = "03f39f7807a8a7ec3d496d167eaaeacdbdd81b74da63cfaf8f44e528cf418745"
 ORIGINAL_KEYS = ("react", "nextjs", "nodejs", "r3f", "threedotjs", "webassembly")
+# ORIGINAL_KEYS describes the immutable historical fixture, not the inventory.
 EXPANSION_FIXTURE = Path(__file__).with_name("framework_expansion_contours.json")
 EXPANSION_SHA256 = "b2e27c86ba99bb4c0946c4e1d7d3c522b00774d19faeaada8b25291969b99670"
+REFINEMENT_FIXTURE = Path(__file__).with_name("framework_refinement_contours.json")
+REFINEMENT_SHA256 = "a283c2615f578f9c6460f0d58af43d99e85c91c95ce95dcec8c07b62d6079701"
+PRESERVED_KEYS = ("react", "nextjs", "nodejs", "r3f", "threedotjs",
+                  "tailwindcss", "bootstrap", "framermotion", "jquery")
+
+
+def refinement_fixture():
+    content = REFINEMENT_FIXTURE.read_bytes()
+    if hashlib.sha256(content).hexdigest() != REFINEMENT_SHA256:
+        raise ValueError("Reviewed refinement contour samples changed")
+    data = json.loads(content)
+    if data["version"] != 1 or set(data["points"]) != {"vue", "googleappsscript", "prisma"}:
+        raise ValueError("Invalid refinement fixture")
+    for source in data["sources"].values():
+        if hashlib.sha256((REFINEMENT_FIXTURE.parent/source["file"]).read_bytes()).hexdigest() != source["sha256"]:
+            raise ValueError("Reviewed brand reference changed")
+    return data
 
 
 def prepared_contours(cfg, columns, sources):
@@ -55,7 +73,10 @@ def prepared_contours(cfg, columns, sources):
     added = json.loads(expansion)
     if added["version"] != 1 or set(added["points"]) & set(frozen["points"]):
         raise ValueError("Invalid or overlapping expansion fixture")
-    points = {**frozen["points"], **added["points"]}
+    # Archived WASM/Spring/crate/GAS remain reproducible in the old fixtures.
+    # Only cfg['icons'] selects active marks; the new GAS explicitly overrides
+    # its historical source-file illustration without rewriting that evidence.
+    points = {**frozen["points"], **added["points"], **refinement_fixture()["points"]}
     positions = cfg["positions"]
     if len(positions) != len(cfg["icons"]):
         raise ValueError("Missing Frameworks positions")
@@ -99,11 +120,11 @@ class QuietOrbits:
     def __init__(self, cfg, nodes, font, brightness):
         self.cfg, self.nodes = cfg, nodes
         self.font, self.brightness = font, brightness
+        self.sample_colors = refinement_fixture()["colors"]
         self.protected = Image.new("L", SIZE)
         draw = ImageDraw.Draw(self.protected)
         # All clipping/masking occurs AFTER orbital glow and AA, so zero is exact.
-        self.protection_boxes = [("header", (0, 0, SIZE[0]-1, 113)),
-                                 ("footer", (0, SIZE[1]-44, SIZE[0]-1, SIZE[1]-1))]
+        self.protection_boxes = [("header", (0, 0, SIZE[0]-1, 113))]
         for node in nodes:
             key, label, _, _, _, x, y, _ = node
             self.protection_boxes.append((key, logo_envelope(node, padding=3)))
@@ -188,24 +209,21 @@ class QuietOrbits:
                   fill=(177, 220, 242), font=font(20, True))
         draw.text((43, 59), cfg["title"], fill=(118, 190, 222), font=font(25, True))
         draw.text((43, 95), cfg["subtitle"], fill=(87, 138, 169), font=font(13))
-        for i, (_, label, activity, color, _, x0, y0, points) in enumerate(self.nodes):
+        for i, (key, label, activity, color, _, x0, y0, points) in enumerate(self.nodes):
             dx, dy = (0, 0) if freeze else floating_offset(i, phase)
             rgb = tuple(int(color[j:j+2], 16) for j in (1, 3, 5))
             for n, (px, py) in enumerate(points):
                 pulse = 1 if freeze else particle_pulse(i, n, phase)
-                ink = tuple(min(255, round(c*self.brightness[activity]*pulse)) for c in rgb)
+                sample_color = self.sample_colors.get(key)
+                source_rgb = (tuple(int(sample_color[n][j:j+2], 16) for j in (1, 3, 5))
+                              if sample_color is not None else rgb)
+                ink = tuple(min(255, round(c*self.brightness[activity]*pulse)) for c in source_rgb)
                 x, y = round(x0+dx+px), round(y0+dy+py)
                 draw.point((x, y), fill=ink)
                 if n % 8 == 0:
                     draw.ellipse((x-1, y-1, x+1, y+1), fill=ink)
             draw.text((x0, y0+LABEL_OFFSET), label, anchor="mm",
                       font=font(LABEL_SIZE, True), fill=(207, 228, 245))
-        draw.line((43, SIZE[1]-39, 1158, SIZE[1]-39), fill=(29, 67, 93), width=1)
-        draw.text((43, SIZE[1]-31), "SKILL STATUS IS DESCRIPTIVE, NOT A PROFICIENCY SCORE",
-                  fill=(111, 156, 182), font=font(13))
-        # Preserve the committed baseline's right anchor (the prototype was 1px left).
-        draw.text((1158, SIZE[1]-31), "YT-TECHDEV  /  FRAMEWORKS", anchor="ra",
-                  fill=(114, 165, 193), font=font(13))
         return image
 
     def render(self, phase, *, freeze=False):
