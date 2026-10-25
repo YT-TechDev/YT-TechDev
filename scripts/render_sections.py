@@ -12,7 +12,7 @@ import math
 import random
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
 from render_constellation import font, sample_outline
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,15 +27,21 @@ ACTIVITY_BRIGHTNESS = {
 }
 SECTIONS = {
     "languages": {
-        "title": "01  /  LANGUAGES",
-        "subtitle": "LANGUAGES USED & EXPLORED",
-        "height": 560,
-        "rows": (177, 385),
+        "title": "01  /  LANGUAGES & MARKUP",
+        "subtitle": "FRONTEND & WEB  →  SCRIPTING  →  BACKEND & SYSTEMS",
+        "width": 1600,
+        "height": 780,
+        "columns": (164, 482, 800, 1118, 1436),
+        "rows": (231, 531),
         "icons": [
-            ("typescript", "TypeScript", "building", "#74b8ff", None),
+            ("html", "HTML", "used", "#ffb081", "PROFESSIONAL"),
+            ("css", "CSS", "used", "#8dd6ff", "PROFESSIONAL"),
             ("javascript", "JavaScript", "used", "#f3dc79", None),
+            ("typescript", "TypeScript", "building", "#74b8ff", None),
+            ("vbscript", "VBScript", "used", "#c6b8fb", "DEPLOYED"),
             ("python", "Python", "used", "#a7d8fa", None),
-            ("moonbit", "MoonBit", "used", "#a1c6ff", "WIF RUNTIME"),
+            ("java", "Java", "used", "#ffd19b", "PROFESSIONAL"),
+            ("moonbit", "MoonBit", "used", "#d2a7f5", "WIF RUNTIME"),
             ("cplusplus", "C++", "exploring", "#b8baff", "EXPLORING"),
             ("rust", "Rust", "exploring", "#edab8f", "EXPLORING"),
         ],
@@ -74,10 +80,10 @@ SECTIONS = {
 }
 
 
-def make_background(height: int, seed: int) -> Image.Image:
+def make_background(height: int, seed: int, width: int = WIDTH) -> Image.Image:
     rng = random.Random(seed)
-    bg = Image.new("RGB", (WIDTH, height), "#040d1d")
-    nebula = Image.new("RGBA", (WIDTH, height), (0, 0, 0, 0))
+    bg = Image.new("RGB", (width, height), "#040d1d")
+    nebula = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     d = ImageDraw.Draw(nebula, "RGBA")
     d.ellipse((120, -290, 1100, height + 390), fill=(23, 67, 128, 67))
     d.ellipse((580, -160, 1510, height + 120), fill=(10, 108, 166, 32))
@@ -86,10 +92,49 @@ def make_background(height: int, seed: int) -> Image.Image:
     bg.paste(nebula, (0, 0), nebula)
     draw = ImageDraw.Draw(bg)
     for _ in range(int(height * .34)):
-        x, y = rng.randrange(WIDTH), rng.randrange(height)
+        x, y = rng.randrange(width), rng.randrange(height)
         s = rng.choice((33, 42, 55, 71, 96, 135, 170))
         draw.point((x, y), fill=(s // 2, s * 3 // 4, min(255, s)))
     return bg
+
+
+def sample_official_moonbit(count, rng):
+    """Sample silhouette and interior edges of MoonBit's OWN logo artwork.
+
+    Frozen from moonbitlang/moonbit-docs at commit
+    50bbd2f59ba80ed046b6ecad57c7e8507ca06e9e/next/_static/logo.png.
+    Not a hand-drawn moon or approximate M glyph.
+    """
+    source = ROOT / "assets/moonbit-official.png"
+    with Image.open(source) as source_image:
+        img = source_image.convert("RGBA")
+    bounds = img.getchannel("A").getbbox()
+    if not bounds:
+        raise ValueError("Official MoonBit logo has no painted pixels")
+    img = img.crop(bounds)
+    img.thumbnail((174, 166), Image.Resampling.LANCZOS)
+    w, h = img.size
+    pixels = img.load()
+    alpha = img.getchannel("A")
+    outer = ImageChops.subtract(alpha, alpha.filter(ImageFilter.MinFilter(5)))
+    outline = outer.load()
+    choices = []
+    for y in range(1, h - 1):
+        for x in range(1, w - 1):
+            rgba = pixels[x, y]
+            if rgba[3] < 72:
+                continue
+            neighbors = (pixels[x + 1, y], pixels[x, y + 1])
+            color_edge = any(
+                v[3] > 72 and max(abs(rgba[i] - v[i]) for i in range(3)) > 43
+                for v in neighbors
+            )
+            if outline[x, y] > 26 or color_edge:
+                choices.append((x - w / 2, y - h / 2))
+    if len(choices) < 500:
+        raise ValueError("Official MoonBit contour incomplete")
+    rng.shuffle(choices)
+    return [choices[i % len(choices)] for i in range(count)]
 
 
 def prepared_nodes(section_id, cfg, originals, extras):
@@ -97,9 +142,18 @@ def prepared_nodes(section_id, cfg, originals, extras):
     nodes = []
     for i, (key, label, category, color, tag) in enumerate(cfg["icons"]):
         # More points for every icon than the original low-visibility last rows.
-        samples = sample_outline(key, originals, extras, 1000, rng)
-        nodes.append((key, label, category, color, tag, COLUMNS[i % 3],
-                      cfg["rows"][i // 3], samples))
+        count = 1450 if section_id == "languages" else 1000
+        if key == "moonbit":
+            samples = sample_official_moonbit(count, rng)
+        else:
+            samples = sample_outline(key, originals, extras, count, rng)
+        if key == "typescript" and section_id == "languages":
+            # The TS glyph previously appeared smaller; round its raster edges
+            # in the source sampler and normalize optical scale.
+            samples = [(x * 1.18, y * 1.18) for x, y in samples]
+        columns = cfg.get("columns", COLUMNS)
+        nodes.append((key, label, category, color, tag, columns[i % len(columns)],
+                      cfg["rows"][i // len(columns)], samples))
     return nodes
 
 
@@ -112,17 +166,23 @@ def render_frame(section_id, cfg, bg, nodes, phase, *, freeze=False):
     draw.text((43, 59), cfg["title"], fill=(118, 190, 222), font=font(25, True))
     draw.text((43, 95), cfg["subtitle"], fill=(87, 138, 169), font=font(13))
 
-    # Constellation connections: always behind and outside readable labels.
+    # Directional constellation lanes. Only the Languages layout is modified.
+    columns = cfg.get("columns", COLUMNS)
     for row in range(len(cfg["rows"])):
-        for col in range(2):
-            draw.line((COLUMNS[col] + 91, cfg["rows"][row] - 4,
-                       COLUMNS[col + 1] - 91, cfg["rows"][row] - 4),
+        for col in range(len(columns) - 1):
+            draw.line((columns[col] + 91, cfg["rows"][row] - 4,
+                       columns[col + 1] - 91, cfg["rows"][row] - 4),
                       fill=(26, 60, 83), width=1)
     for row in range(len(cfg["rows"]) - 1):
-        for col in range(3):
-            x = COLUMNS[col] + (22 if col % 2 == 0 else -22)
+        for col in range(len(columns)):
+            x = columns[col] + (22 if col % 2 == 0 else -22)
             draw.line((x, cfg["rows"][row] + 74, x,
                        cfg["rows"][row + 1] - 68), fill=(23, 56, 80), width=1)
+    if section_id == "languages":
+        draw.text((43, 136), "WEB / FRONTEND  →  SCRIPTING",
+                  fill=(93, 153, 184), font=font(17, True))
+        draw.text((43, 434), "BACKEND  →  RUNTIME  →  SYSTEMS",
+                  fill=(93, 153, 184), font=font(17, True))
 
     for i, (key, label, category, color, tag, x0, y0, points) in enumerate(nodes):
         dx = 0 if freeze else math.sin(phase + i * .63) * 2.4
@@ -138,17 +198,18 @@ def render_frame(section_id, cfg, bg, nodes, phase, *, freeze=False):
             draw.point((px0, py0), fill=point_color)
             if n % 8 == 0:
                 draw.ellipse((px0 - 1, py0 - 1, px0 + 1, py0 + 1), fill=point_color)
-        draw.text((x0, y0 + 82), label, anchor="mm", font=font(30, True),
+        draw.text((x0, y0 + 82), label, anchor="mm", font=font(28 if section_id == "languages" else 30, True),
                   fill=(207, 228, 245))
         if tag:
             draw.text((x0, y0 + 116), tag, anchor="mm", font=font(16, True),
                       fill=(147, 195, 219))
 
+    width = cfg.get("width", WIDTH)
     base = cfg["height"] - 34
-    draw.line((43, base - 5, 1158, base - 5), fill=(29, 67, 93), width=1)
+    draw.line((43, base - 5, width - 42, base - 5), fill=(29, 67, 93), width=1)
     draw.text((43, base + 3), "SKILL STATUS IS DESCRIPTIVE, NOT A PROFICIENCY SCORE",
               fill=(111, 156, 182), font=font(13))
-    draw.text((1158, base + 3), "YT-TECHDEV  /  " + section_id.upper(),
+    draw.text((width - 43, base + 3), "YT-TECHDEV  /  " + section_id.upper(),
               anchor="ra", fill=(114, 165, 193), font=font(13))
     return result
 
@@ -156,7 +217,8 @@ def render_frame(section_id, cfg, bg, nodes, phase, *, freeze=False):
 def render_section(section_id, original, extra, frames):
     cfg = SECTIONS[section_id]
     height = cfg["height"]
-    bg = make_background(height, SEED + len(section_id) * 19)
+    width = cfg.get("width", WIDTH)
+    bg = make_background(height, SEED + len(section_id) * 19, width)
     nodes = prepared_nodes(section_id, cfg, original, extra["paths"])
     assets = ROOT / "assets"
     assets.mkdir(parents=True, exist_ok=True)
@@ -173,7 +235,7 @@ def render_section(section_id, original, extra, frames):
         duration=105, loop=0, disposal=2, optimize=True,
     )
     with Image.open(png) as p, Image.open(gif) as g:
-        assert p.size == g.size == (WIDTH, height), "Bad image geometry"
+        assert p.size == g.size == (width, height), "Bad image geometry"
         assert g.n_frames == frames, "Bad GIF frame count"
     print(f"{section_id}: {len(nodes)} nodes; GIF {gif.stat().st_size:,} bytes; PNG {png.stat().st_size:,} bytes")
 
@@ -193,7 +255,7 @@ def main():
         raise ValueError("Supplemental paths changed; review required")
     total = sum(len(s["icons"]) for s in SECTIONS.values())
     keys = [row[0] for section in SECTIONS.values() for row in section["icons"]]
-    if total != 21 or len(set(keys)) != total:
+    if total != 25 or len(set(keys)) != total:
         raise ValueError("Unexpected icon count or duplicate key")
     for section_id in ([args.only] if args.only else SECTIONS):
         render_section(section_id, original, extras, args.frames)

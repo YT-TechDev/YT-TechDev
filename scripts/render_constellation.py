@@ -135,6 +135,9 @@ def sample_outline(key, originals, extras, count, rng):
         raise ValueError(f"Empty icon: {key}")
     alpha = alpha.crop(bounds)
     alpha.thumbnail((150, 121), Image.Resampling.LANCZOS)
+    if key == "typescript":
+        # Antialias the pixelized TS corners while retaining the recognizable source path.
+        alpha = alpha.filter(ImageFilter.GaussianBlur(0.85))
     edge = ImageChops.subtract(alpha, alpha.filter(ImageFilter.MinFilter(5)))
     w, h = alpha.size
     p = edge.load()

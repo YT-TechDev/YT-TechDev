@@ -8,6 +8,7 @@ on:
     paths:
       - "scripts/render_constellation.py"
       - "scripts/render_sections.py"
+      - "assets/moonbit-official.png"
       - "data/icon-paths.json"
       - "data/supplemental-icons.json"
       - ".github/workflows/render-constellation.yml"
@@ -27,26 +28,18 @@ jobs:
           python-version: "3.12"
       - name: Install renderer dependencies
         run: python -m pip install -r scripts/requirements.txt
-      - name: Render three constellations
-        run: python scripts/render_sections.py
-      - name: Verify animations and static previews
+      - name: Render Languages and Markup only
+        run: python scripts/render_sections.py --only languages
+      - name: Verify Languages render only
         run: |
           python - <<'PY'
-          from pathlib import Path
           from PIL import Image
-          for name, size in {
-              "languages": (1200, 560),
-              "frameworks": (1200, 560),
-              "tools": (1200, 810),
-          }.items():
-              png = Path(f"assets/constellation-{name}.png")
-              gif = Path(f"assets/constellation-{name}.gif")
-              assert png.exists() and gif.exists(), name
-              with Image.open(png) as p, Image.open(gif) as g:
-                  assert p.size == g.size == size, name
-                  assert g.n_frames == 18, name
-                  assert g.info.get("loop") == 0, name
-                  print(f"{name}: {size}, {g.n_frames} GIF frames")
+          with Image.open("assets/constellation-languages.png") as p, \
+               Image.open("assets/constellation-languages.gif") as g:
+              assert p.size == g.size == (1600, 780)
+              assert g.n_frames == 18
+              assert g.info.get("loop") == 0
+          print("Languages-only visual asset checks passed")
           PY
       - name: Commit generated image assets
         run: |
