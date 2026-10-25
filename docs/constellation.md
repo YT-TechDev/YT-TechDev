@@ -1,16 +1,25 @@
 # Skill Constellation — GitHub profile artwork
 
-A GitHub profile README **cannot execute React/TSX, WebGL or an interactive Canvas**. This repository renders a static SVG fallback directly in the README, and provides a separate reproducible animated GIF export.
+This repository's profile README embeds a generated **animated GIF**; GitHub README pages do not execute React/TSX, WebGL or interactive canvases.
 
-## Provenance
+## Provenance and repairs
 
-- Technology SVG paths are a frozen subset of `YT-TechDev/yt-techdev-portfolio` at commit `6e4ea4fdbea13d57e7eb4f0f120452a2baf63a27`.
-- Upstream path source: `components/home/Skills/particle/svgPaths.ts`.
-- Rust icon is from [Simple Icons](https://github.com/simple-icons/simple-icons), CC0.
-- React / Next.js / R3F small compositions are redrawn as simple outline primitives rather than claiming to be upstream SVG shapes.
-- No connection to GitHub contribution statistics; visual activity categories are manually curated.
+- The original portfolio paths remain pinned in `data/icon-paths.json` from `YT-TechDev/yt-techdev-portfolio` commit `6e4ea4fdbea13d57e7eb4f0f120452a2baf63a27` (`components/home/Skills/particle/svgPaths.ts`).
+- **TypeScript, PostgreSQL, Docker and Git** were distorted by a heuristic SVG viewBox in the first iteration. These are now rendered using explicitly normalized 24×24 paths.
+- Repaired icon paths and additional C++, Linux, WebAssembly, Three.js, Blender, Claude paths are from [Simple Icons](https://github.com/simple-icons/simple-icons) pinned at commit `90646e4bf7f3b89df6c37e65baf3e7bc759a517c`; stored as `data/supplemental-icons.json`.
+- JavaScript, Node.js, Python and Cloudflare continue to use the pinned portfolio paths.
+- React/Next.js/R3F are locally drawn particle motifs. VS Code is an **illustrative code symbol**, ChatGPT is an **abstract particle knot**, not their official marks.
 
-## Export
+## Editorial semantics
+
+- **Building**: represented in active public development.
+- **Used**: appears in projects or tooling workflows, not an expertise rating.
+- **Exploring**: learning or interest, not professional proficiency (C++ and Rust).
+- **AI tool**: ChatGPT and Claude are tools, not programming-language competencies.
+
+No GitHub stats are queried; brightness is a curated activity visualization. Assembly and RAOS are deliberately not listed.
+
+## Rendering
 
 ```bash
 python -m pip install -r scripts/requirements.txt
@@ -18,17 +27,13 @@ python scripts/render_constellation.py --out assets/constellation.gif
 python scripts/render_constellation.py --static --out assets/constellation.png
 ```
 
-The GitHub Actions workflow renders the images and pushes generated GIF/PNG binaries when permitted by repository workflow settings. The README now references the committed `assets/constellation.gif`. A static `assets/constellation.svg` and `assets/constellation.png` remain available as fallbacks. The image is non-interactive; verify its legibility visually in the pull request before merging.
+Generated images are committed by GitHub Actions when permitted. The README uses GIF and PNG is the static fallback. The older 12-icon SVG has been removed rather than retained as an inconsistent fallback.
 
-## Editorial safety
+## Review before merging
 
-- `building`: linked to current public work.
-- `used`: used in engineering workflows; not a proficiency assessment.
-- `exploring`: interest without competence claims (Rust).
-- No assembly listing; RAOS is intentionally not listed prior to public release.
-- Do not use these labels as live automated telemetry.
-- Profile repository and source portfolio are independent: no portfolio edits are required.
+- [ ] TypeScript, PostgreSQL, Docker and Git display complete recognizable outlines.
+- [ ] 20 nodes display, in 4 columns by 5 rows; verify phone-scale text.
+- [ ] GIF is animated with 24 frames at 1200×960.
+- [ ] Make a final GitHub PR visual check before merge.
 
-## Testing
-
-The PR should not be merged without validating successful rendering and GitHub Markdown preview. In a local environment, test GIF frame count (28), PNG/GIF geometry (1200×620) and text readability on mobile. Generated visuals are non-interactive.
+The portfolio repository remains untouched.

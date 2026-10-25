@@ -35,8 +35,8 @@ jobs:
           from PIL import Image
           gif = Image.open("assets/constellation.gif")
           png = Image.open("assets/constellation.png")
-          assert gif.size == png.size == (1200, 620)
-          assert gif.n_frames == 28
+          assert gif.size == png.size == (1200, 960)
+          assert gif.n_frames == 24
           print("Artwork validation passed.")
           PY
       - name: Commit regenerated preview assets
