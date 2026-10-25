@@ -18,7 +18,7 @@ python scripts/render_constellation.py --out assets/constellation.gif
 python scripts/render_constellation.py --static --out assets/constellation.png
 ```
 
-The GitHub Actions workflow renders the images and pushes generated GIF/PNG binaries when permitted by repository workflow settings. The committed `assets/constellation.svg` remains the README's always-visible lightweight default until the animation is reviewed. Switching the README to GIF is a separate visual approval step.
+The GitHub Actions workflow renders the images and pushes generated GIF/PNG binaries when permitted by repository workflow settings. The README now references the committed `assets/constellation.gif`. A static `assets/constellation.svg` and `assets/constellation.png` remain available as fallbacks. The image is non-interactive; verify its legibility visually in the pull request before merging.
 
 ## Editorial safety
 
