@@ -52,8 +52,12 @@ SECTIONS = {
     "frameworks": {
         "title": "02  /  FRAMEWORKS & RUNTIMES",
         "subtitle": "FROM WEB FRAMEWORKS TO WASM EXECUTION",
-        "height": 560,
-        "rows": (177, 385),
+        "height": 1110,
+        "rows": (191, 431, 671, 911),
+        "positions": ((215,191),(600,191),(985,191),
+                      (215,431),(600,431),(985,431),
+                      (215,671),(600,671),(985,671),
+                      (170,911),(460,911),(750,911),(1040,911)),
         "icons": [
             ("react", "React", "building", "#79f1ff", None),
             ("nextjs", "Next.js", "used", "#f1f3fd", None),
@@ -61,6 +65,13 @@ SECTIONS = {
             ("r3f", "R3F", "building", "#dcc2ff", None),
             ("threedotjs", "Three.js", "used", "#c6e9f9", None),
             ("webassembly", "WebAssembly", "used", "#b7bdff", None),
+            ("googleappsscript", "Google Apps Script", "used", "#9ec7ff", None),
+            ("tailwindcss", "TailwindCSS", "used", "#80e5ef", None),
+            ("bootstrap", "Bootstrap", "used", "#c9a4ff", None),
+            ("framermotion", "Framer Motion", "used", "#f3df83", None),
+            ("jquery", "jQuery", "used", "#7acef4", None),
+            ("springboot", "SpringBoot", "used", "#a5dd83", None),
+            ("rustcrate", "Rust crate", "used", "#edab8f", None),
         ],
     },
     "tools": {
@@ -384,9 +395,9 @@ def render_frame(section_id, cfg, bg, nodes, phase, *, freeze=False):
 def render_section(section_id, original, extra, frames):
     cfg = SECTIONS[section_id]
     if section_id == "frameworks":
-        from framework_orbits import QuietOrbits, prepared_contours, render_assets
+        from framework_orbits import ORIGINAL_KEYS, QuietOrbits, prepared_contours, render_assets
         sources = {spec[0]: glyph_svg(spec[0], original, extra["paths"])
-                   for spec in cfg["icons"]}
+                   for spec in cfg["icons"] if spec[0] in ORIGINAL_KEYS}
         nodes = prepared_contours(cfg, COLUMNS, sources)
         render_assets(QuietOrbits(cfg, nodes, font, ACTIVITY_BRIGHTNESS), ROOT / "assets", frames)
         return
@@ -447,7 +458,7 @@ def main():
     extras["paths"].update(extras["devicon_paths"])
     total = sum(len(s["icons"]) for s in SECTIONS.values())
     keys = [row[0] for section in SECTIONS.values() for row in section["icons"]]
-    if total != 25 or len(set(keys)) != total:
+    if total != 32 or len(set(keys)) != total:
         raise ValueError("Unexpected icon count or duplicate key")
     for section_id in ([args.only] if args.only else SECTIONS):
         defaults = {"languages": 36, "frameworks": 64, "tools": 18}

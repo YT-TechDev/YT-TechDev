@@ -14,23 +14,26 @@ from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
-SIZE = (1200, 560)
+SIZE = (1200, 1110)
 FRAMES = 64
 DURATION_MS = 100
-LABEL_SIZE = 36
-LABEL_OFFSET = 88
+LABEL_SIZE = 38
+LABEL_OFFSET = 96
 SEED = 847491
 DRIFT = (1.2, 5.0)
 DOT_RADIUS = 1
 ORBITS = (
-    (600, 281, 574, 138, -7, (98, 181, 225), .76),
-    (606, 282, 657, 217, 9, (151, 136, 213), .60),
+    (600, 558, 560, 430, -8, (98, 181, 225), .76),
+    (606, 570, 600, 490, 9, (151, 136, 213), .60),
 )
 LIGHT_STARTS = (.14, 2.45)
 LIGHT_ARCS = (.08, .10)
 LIGHT_RADIUS = 8  # 5px glow plus the 3x -> 1x Lanczos filter's 3px support.
 FIXTURE = Path(__file__).with_name("framework_contours.json")
 CONTOUR_SHA256 = "03f39f7807a8a7ec3d496d167eaaeacdbdd81b74da63cfaf8f44e528cf418745"
+ORIGINAL_KEYS = ("react", "nextjs", "nodejs", "r3f", "threedotjs", "webassembly")
+EXPANSION_FIXTURE = Path(__file__).with_name("framework_expansion_contours.json")
+EXPANSION_SHA256 = "b2e27c86ba99bb4c0946c4e1d7d3c522b00774d19faeaada8b25291969b99670"
 
 
 def prepared_contours(cfg, columns, sources):
@@ -46,8 +49,18 @@ def prepared_contours(cfg, columns, sources):
               for key, value in sources.items()}
     if actual != expected:
         raise ValueError("Frameworks SVG sources changed; contour review required")
-    return [(*spec, columns[i % len(columns)], cfg["rows"][i // len(columns)],
-             [tuple(point) for point in frozen["points"][spec[0]]])
+    expansion = EXPANSION_FIXTURE.read_bytes()
+    if hashlib.sha256(expansion).hexdigest() != EXPANSION_SHA256:
+        raise ValueError("Expanded Frameworks contour samples changed")
+    added = json.loads(expansion)
+    if added["version"] != 1 or set(added["points"]) & set(frozen["points"]):
+        raise ValueError("Invalid or overlapping expansion fixture")
+    points = {**frozen["points"], **added["points"]}
+    positions = cfg["positions"]
+    if len(positions) != len(cfg["icons"]):
+        raise ValueError("Missing Frameworks positions")
+    return [(*spec, *positions[i],
+             [tuple(point) for point in points[spec[0]]])
             for i, spec in enumerate(cfg["icons"])]
 
 
@@ -89,8 +102,8 @@ class QuietOrbits:
         self.protected = Image.new("L", SIZE)
         draw = ImageDraw.Draw(self.protected)
         # All clipping/masking occurs AFTER orbital glow and AA, so zero is exact.
-        self.protection_boxes = [("header", (0, 0, 1199, 113)),
-                                 ("footer", (0, 516, 1199, 559))]
+        self.protection_boxes = [("header", (0, 0, SIZE[0]-1, 113)),
+                                 ("footer", (0, SIZE[1]-44, SIZE[0]-1, SIZE[1]-1))]
         for node in nodes:
             key, label, _, _, _, x, y, _ = node
             self.protection_boxes.append((key, logo_envelope(node, padding=3)))
@@ -131,7 +144,7 @@ class QuietOrbits:
             for _ in range(count):
                 x, y = rng.randrange(width), rng.randrange(height)
                 value = rng.randrange(lo, hi)
-                if y < 114 or y > 515 or mask[x, y] < 36:
+                if y < 114 or y > height-45 or mask[x, y] < 36:
                     value = round(value * .38)
                 draw.point((x, y), fill=(round(value*.55), round(value*.77), value))
         return image
@@ -187,11 +200,11 @@ class QuietOrbits:
                     draw.ellipse((x-1, y-1, x+1, y+1), fill=ink)
             draw.text((x0, y0+LABEL_OFFSET), label, anchor="mm",
                       font=font(LABEL_SIZE, True), fill=(207, 228, 245))
-        draw.line((43, 521, 1158, 521), fill=(29, 67, 93), width=1)
-        draw.text((43, 529), "SKILL STATUS IS DESCRIPTIVE, NOT A PROFICIENCY SCORE",
+        draw.line((43, SIZE[1]-39, 1158, SIZE[1]-39), fill=(29, 67, 93), width=1)
+        draw.text((43, SIZE[1]-31), "SKILL STATUS IS DESCRIPTIVE, NOT A PROFICIENCY SCORE",
                   fill=(111, 156, 182), font=font(13))
         # Preserve the committed baseline's right anchor (the prototype was 1px left).
-        draw.text((1158, 529), "YT-TECHDEV  /  FRAMEWORKS", anchor="ra",
+        draw.text((1158, SIZE[1]-31), "YT-TECHDEV  /  FRAMEWORKS", anchor="ra",
                   fill=(114, 165, 193), font=font(13))
         return image
 
@@ -236,6 +249,6 @@ def render_assets(renderer, destination, frames=FRAMES):
     palette = global_palette(animation)
     indexed = [frame.quantize(palette=palette, dither=Image.Dither.NONE) for frame in animation]
     indexed[0].save(gif, save_all=True, append_images=indexed[1:],
-                    duration=DURATION_MS, loop=0, disposal=2, optimize=False)
+                    duration=DURATION_MS, loop=0, disposal=1, optimize=True)
     print(f"frameworks: {len(renderer.nodes)} nodes; GIF {gif.stat().st_size:,} bytes; "
           f"PNG {png.stat().st_size:,} bytes; {frames} x {DURATION_MS}ms")

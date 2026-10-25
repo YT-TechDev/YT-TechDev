@@ -17,7 +17,7 @@ A small constellation of languages, frameworks and tools I build with or explore
 ### Frameworks & Runtimes
 
 <p align="center">
-  <img src="./assets/constellation-frameworks.gif" alt="Frameworks and runtimes particle constellation: React, Next.js, Node.js, React Three Fiber, Three.js and WebAssembly." width="100%" />
+  <img src="./assets/constellation-frameworks.gif" alt="Frameworks and runtimes particle constellation: React, Next.js, Node.js, R3F, Three.js, WebAssembly, Google Apps Script, TailwindCSS, Bootstrap, Framer Motion, jQuery, SpringBoot and Rust crate." width="100%" />
 </p>
 
 ### Tools & Platforms

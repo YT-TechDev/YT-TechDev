@@ -11,6 +11,7 @@ on:
       - "scripts/verify_languages.py"
       - "scripts/framework_orbits.py"
       - "scripts/framework_contours.json"
+      - "scripts/framework_expansion_contours.json"
       - "scripts/verify_frameworks.py"
       - "scripts/requirements.txt"
       - "assets/constellation-*.gif"
@@ -68,7 +69,7 @@ jobs:
               if not before or set(before) == {'0'}:
                   before = 'HEAD^'
               changed = set(subprocess.check_output(['git','diff','--name-only',before,'HEAD'],text=True).splitlines())
-              frameworks = bool(changed & {'scripts/framework_orbits.py','scripts/framework_contours.json','scripts/verify_frameworks.py'})
+              frameworks = bool(changed & {'scripts/framework_orbits.py','scripts/framework_contours.json','scripts/framework_expansion_contours.json','scripts/verify_frameworks.py'})
               frameworks |= any(p.startswith('assets/constellation-frameworks.') for p in changed)
               languages = bool(changed & {'scripts/verify_languages.py','assets/moonbit-official.png'})
               languages |= any(p.startswith('assets/constellation-languages.') for p in changed)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import math
@@ -18,14 +19,21 @@ from PIL import Image, ImageChops, ImageDraw, ImageStat
 import render_sections as sections
 from framework_orbits import (
     CONTOUR_SHA256, DOT_RADIUS, DRIFT, DURATION_MS, FIXTURE, FRAMES,
-    LABEL_OFFSET, LABEL_SIZE, ORBITS, SIZE, QuietOrbits, floating_offset,
+    LABEL_OFFSET, LABEL_SIZE, ORBITS, SIZE, ORIGINAL_KEYS,
+    EXPANSION_FIXTURE, EXPANSION_SHA256, QuietOrbits, floating_offset,
     global_palette, light_angle, logo_envelope, particle_pulse, prepared_contours,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-NAMES = ("React", "Next.js", "Node.js", "R3F", "Three.js", "WebAssembly")
-KEYS = ("react", "nextjs", "nodejs", "r3f", "threedotjs", "webassembly")
-COLORS = ("#79f1ff", "#f1f3fd", "#a9efb8", "#dcc2ff", "#c6e9f9", "#b7bdff")
+NAMES = ("React", "Next.js", "Node.js", "R3F", "Three.js", "WebAssembly",
+         "Google Apps Script", "TailwindCSS", "Bootstrap", "Framer Motion",
+         "jQuery", "SpringBoot", "Rust crate")
+KEYS = ORIGINAL_KEYS + ("googleappsscript", "tailwindcss", "bootstrap", "framermotion",
+                        "jquery", "springboot", "rustcrate")
+COLORS = ("#79f1ff", "#f1f3fd", "#a9efb8", "#dcc2ff", "#c6e9f9", "#b7bdff",
+          "#9ec7ff", "#80e5ef", "#c9a4ff", "#f3df83", "#7acef4", "#a5dd83", "#edab8f")
+POSITIONS = ((215,191),(600,191),(985,191),(215,431),(600,431),(985,431),
+             (215,671),(600,671),(985,671),(170,911),(460,911),(750,911),(1040,911))
 PROTECTED_BLOBS = {
     "assets/constellation-languages.gif": "9f5a84ddae394f44992215c59a4271e37a932fb4",
     "assets/constellation-languages.png": "50ae288464fd4e9de3db5bc69d3b479ebf88b385",
@@ -49,7 +57,7 @@ def load_renderer():
     extra["paths"].update(extra["devicon_paths"])
     cfg = sections.SECTIONS["frameworks"]
     sources = {n[0]: sections.glyph_svg(n[0], original, extra["paths"])
-               for n in cfg["icons"]}
+               for n in cfg["icons"] if n[0] in ORIGINAL_KEYS}
     nodes = prepared_contours(cfg, sections.COLUMNS, sources)
     return QuietOrbits(cfg, nodes, sections.font, sections.ACTIVITY_BRIGHTNESS)
 
@@ -58,18 +66,62 @@ def distance(a, b, mask=None):
     return sum(ImageStat.Stat(ImageChops.difference(a, b), mask=mask).mean)/3
 
 
+def verify_palette_tables(gif):
+    """Parse real GIF blocks: all image color tables must equal the global one."""
+    data = gif.read_bytes()
+    assert data[:6] in (b"GIF87a", b"GIF89a") and data[10] & 128
+    size = 3 * 2**((data[10] & 7)+1)
+    global_table, position = data[13:13+size], 13+size
+    count = 0
+
+    def skip_subblocks(p):
+        while data[p]:
+            p += 1 + data[p]
+        return p+1
+
+    while data[position] != 59:
+        if data[position] == 33:
+            position = skip_subblocks(position+2)
+        else:
+            assert data[position] == 44, "Invalid GIF block"
+            flags = data[position+9]
+            position += 10
+            table = global_table
+            if flags & 128:
+                length = 3 * 2**((flags & 7)+1)
+                table = data[position:position+length]
+                position += length
+            assert table == global_table, "Frame palette drift"
+            count += 1
+            position = skip_subblocks(position+1)
+    assert count == FRAMES
+    return {"image_blocks": count, "all_tables_equal_global": True,
+            "palette_table_sha256": hashlib.sha256(global_table).hexdigest()}
+
+
 def verify_structure(renderer):
     nodes = renderer.nodes
     assert tuple(n[0] for n in nodes) == KEYS
-    assert tuple(n[1] for n in nodes) == NAMES, "Six names/order changed"
+    assert len(nodes) == 13 and len({n[1] for n in nodes}) == 13
+    assert tuple(n[1] for n in nodes) == NAMES, "Thirteen names/order changed"
     assert tuple(n[3] for n in nodes) == COLORS, "Original logo colors changed"
-    assert tuple((n[5], n[6]) for n in nodes) == (
-        (187, 177), (600, 177), (1013, 177), (187, 385), (600, 385), (1013, 385))
+    assert tuple((n[5], n[6]) for n in nodes) == POSITIONS
     assert len(ORBITS) == 2
-    assert tuple(o[:5] for o in ORBITS) == ((600, 281, 574, 138, -7), (606, 282, 657, 217, 9))
+    assert tuple(o[:5] for o in ORBITS) == ((600,558,560,430,-8), (606,570,600,490,9))
     assert sha256(FIXTURE) == CONTOUR_SHA256
     fixture = json.loads(FIXTURE.read_text())
+    assert sha256(EXPANSION_FIXTURE) == EXPANSION_SHA256
+    added = json.loads(EXPANSION_FIXTURE.read_text())
+    assert tuple(added["points"]) == KEYS[6:]
     assert all(len(n[-1]) == 1000 for n in nodes), "Missing contour samples"
+    for node in nodes:
+        key, *_, points = node
+        expected = fixture["points"] if key in ORIGINAL_KEYS else added["points"]
+        assert [list(p) for p in points] == expected[key], f"Coordinates changed: {key}"
+        assert len(set(points)) >= 180, f"Degenerate symbol: {key}"
+        assert all(math.isfinite(v) and abs(v) <= 80 for point in points for v in point)
+        if key not in ORIGINAL_KEYS:
+            assert added["references"][key].startswith("https://") and added["descriptions"][key]
 
     texts = []
     original_text = ImageDraw.ImageDraw.text
@@ -80,36 +132,44 @@ def verify_structure(renderer):
 
     with patch.object(ImageDraw.ImageDraw, "text", record_text):
         black = renderer.foreground(Image.new("RGB", SIZE), 0, freeze=True)
-    assert [t for _, t, _ in texts][3:9] == list(NAMES)
-    assert len(texts) == 11, "Unexpected labels or badges"
+    assert [t for _, t, _ in texts][3:16] == list(NAMES)
+    assert len(texts) == 18, "Unexpected labels or badges"
     draw = ImageDraw.Draw(black)
-    gaps, silhouettes = [], {}
+    gaps, silhouettes, geometry = [], {}, []
     for node in nodes:
         key, name, category, color, _, x, y, points = node
         xy, _, options = next(entry for entry in texts if entry[1] == name)
-        assert xy == (x, y+88) and options["anchor"] == "mm"
-        assert options["font"].size == 36
+        assert xy == (x, y+LABEL_OFFSET) and options["anchor"] == "mm"
+        assert options["font"].size == LABEL_SIZE == 38
         box = draw.textbbox(xy, name, font=options["font"], anchor="mm")
         gap = box[1] - (y+max(py for _, py in points)+DRIFT[1]+DOT_RADIUS+.5)
         assert gap >= 8, f"Logo/name collision: {name}: {gap}"
         gaps.append(gap)
         envelope = logo_envelope(node)
         assert 0 <= envelope[0] < envelope[2] < SIZE[0], f"{name} clipped horizontally"
-        assert 108 < envelope[1] < envelope[3] < 516, f"{name} clipped/header collision"
-        assert 0 <= box[0] < box[2] < SIZE[0] and box[3] < 516
+        assert 114 < envelope[1] < envelope[3] < SIZE[1]-44, f"{name} clipped/header collision"
+        assert 8 <= box[0] < box[2] < SIZE[0]-8 and box[3] < SIZE[1]-44
+        geometry.extend(((key+" symbol", envelope), (name+" label", box)))
         rgb = tuple(round(int(color[k:k+2],16)*renderer.brightness[category]) for k in (1,3,5))
         mask = bytes(255 if black.getpixel((px, py)) == rgb else 0
                      for py in range(y-75,y+75) for px in range(x-90,x+90))
         digest = hashlib.sha256(mask).hexdigest()
-        assert digest == fixture["baseline_logo_masks"][key], f"{key}: committed silhouette changed"
+        if key in ORIGINAL_KEYS:
+            assert digest == fixture["baseline_logo_masks"][key], f"{key}: committed silhouette changed"
         silhouettes[key] = digest
         # Every point's complete motion envelope is contained in the fixed core.
         assert renderer.protected.crop((envelope[0], envelope[1], envelope[2]+1, envelope[3]+1)).getextrema() == (255,255)
+        assert renderer.protected.crop(box).getextrema() == (255,255), f"Label mask missing: {name}"
+    for i, (name,a) in enumerate(geometry):
+        for other,b in geometry[i+1:]:
+            assert a[2]+8 < b[0] or b[2]+8 < a[0] or a[3]+8 < b[1] or b[3]+8 < a[1], f"Overlap: {name}, {other}"
     for _, text, options in texts:
         assert options["font"].path, "Unexpected default font fallback"
     assert ImageChops.multiply(renderer.keep, renderer.protected).getbbox() is None
     assert ImageChops.multiply(renderer.structure.getchannel("A"), renderer.protected).getbbox() is None
-    return {"minimum_logo_name_gap_px": min(gaps), "baseline_logo_masks_sha256": silhouettes}
+    return {"inventory": list(NAMES), "positions": list(POSITIONS),
+            "minimum_logo_name_gap_px": min(gaps), "logo_masks_sha256": silhouettes,
+            "original_fixture_sha256": sha256(FIXTURE), "expansion_fixture_sha256": sha256(EXPANSION_FIXTURE)}
 
 
 def verify_assets(renderer, assets):
@@ -121,7 +181,7 @@ def verify_assets(renderer, assets):
     assert ImageChops.difference(poster, renderer.render(0, freeze=True)).getbbox() is None, "PNG content mismatch"
     assert gif.stat().st_size <= 3_500_000, "GIF exceeds approved preferred size"
 
-    for i in range(6):
+    for i in range(13):
         assert all(abs(a-b) < 1e-10 for a,b in zip(floating_offset(i, 0),floating_offset(i,math.tau)))
         for n in (0, 499, 999):
             assert abs(particle_pulse(i,n,0)-particle_pulse(i,n,math.tau)) < 1e-10
@@ -164,7 +224,7 @@ def verify_assets(renderer, assets):
         small = poster.resize((width,round(SIZE[1]*width/SIZE[0])),Image.Resampling.LANCZOS)
         for node in renderer.nodes:
             _,name,_,_,_,x,y,_ = node
-            box = ImageDraw.Draw(poster).textbbox((x,y+88),name,font=renderer.font(36,True),anchor="mm")
+            box = ImageDraw.Draw(poster).textbbox((x,y+LABEL_OFFSET),name,font=renderer.font(LABEL_SIZE,True),anchor="mm")
             crop = small.crop(tuple(round(v*width/1200) for v in box)).convert("L")
             assert crop.getextrema()[1] > 100 and sum(crop.histogram()[100:]) > 10, f"Reduced label invisible: {name}"
     return {"canvas": list(SIZE), "frames": len(decoded), "durations_ms": sorted(set(durations)),
@@ -182,6 +242,45 @@ def verify_protected():
     actual = {p: blob_sha(ROOT/p) for p in PROTECTED_BLOBS}
     assert actual == PROTECTED_BLOBS, "Frozen Languages/Tools bytes changed"
     return actual
+
+
+def verify_negative_controls(renderer):
+    """Fail closed for inventory, fixture drift, empty contours and missing masks."""
+    import framework_orbits as orbits
+    rejected = []
+
+    def reject(name, operation):
+        try:
+            operation()
+        except (AssertionError, ValueError):
+            rejected.append(name)
+        else:
+            raise AssertionError(f"Negative control accepted: {name}")
+
+    bad = copy.copy(renderer)
+    bad.nodes = [*renderer.nodes[:-1]]
+    reject("missing technology", lambda: verify_structure(bad))
+    bad = copy.copy(renderer)
+    bad.nodes = list(renderer.nodes)
+    n = list(bad.nodes[9]); n[1] = "FramerNotion"; bad.nodes[9] = tuple(n)
+    reject("incorrect technology identity", lambda: verify_structure(bad))
+    bad = copy.copy(renderer)
+    bad.nodes = list(renderer.nodes)
+    n = list(bad.nodes[6]); n[-1] = []; bad.nodes[6] = tuple(n)
+    reject("empty added contour", lambda: verify_structure(bad))
+    bad = copy.copy(renderer)
+    bad.keep = Image.new("L", SIZE, 255)
+    reject("disabled protection mask", lambda: verify_structure(bad))
+    with tempfile.TemporaryDirectory(prefix="contour-negative-") as directory:
+        for attr, source in (("FIXTURE", FIXTURE), ("EXPANSION_FIXTURE", EXPANSION_FIXTURE)):
+            tampered = Path(directory)/source.name
+            data = json.loads(source.read_text())
+            key = next(iter(data["points"]))
+            data["points"][key][0][0] += .5
+            tampered.write_text(json.dumps(data))
+            with patch.object(orbits, attr, tampered):
+                reject(attr+" coordinate drift", load_renderer)
+    return {"rejected": rejected, "count": len(rejected)}
 
 
 def verify_determinism(assets):
@@ -212,7 +311,9 @@ def main():
     parser.add_argument("--report",type=Path)
     args = parser.parse_args()
     renderer = load_renderer()
-    result = {"structure":verify_structure(renderer),"animation":verify_assets(renderer,args.assets)}
+    result = {"structure":verify_structure(renderer),"animation":verify_assets(renderer,args.assets),
+              "palette": verify_palette_tables(args.assets/"constellation-frameworks.gif"),
+              "negative_controls": verify_negative_controls(renderer)}
     if args.protected:
         result["protected_blobs"] = verify_protected()
     if args.determinism:
