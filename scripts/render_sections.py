@@ -175,18 +175,19 @@ def render_frame(section_id, cfg, bg, nodes, phase, *, freeze=False):
     draw.text((43, 59), cfg["title"], fill=(118, 190, 222), font=font(25, True))
     draw.text((43, 95), cfg["subtitle"], fill=(87, 138, 169), font=font(13))
 
-    # Directional constellation lanes. Only the Languages layout is modified.
-    columns = cfg.get("columns", COLUMNS)
-    for row in range(len(cfg["rows"])):
-        for col in range(len(columns) - 1):
-            draw.line((columns[col] + 91, cfg["rows"][row] - 4,
-                       columns[col + 1] - 91, cfg["rows"][row] - 4),
-                      fill=(26, 60, 83), width=1)
-    for row in range(len(cfg["rows"]) - 1):
-        for col in range(len(columns)):
-            x = columns[col] + (22 if col % 2 == 0 else -22)
-            draw.line((x, cfg["rows"][row] + 74, x,
-                       cfg["rows"][row + 1] - 68), fill=(23, 56, 80), width=1)
+    # Languages float freely; retain the other sections' constellation lanes.
+    if section_id != "languages":
+        columns = cfg.get("columns", COLUMNS)
+        for row in range(len(cfg["rows"])):
+            for col in range(len(columns) - 1):
+                draw.line((columns[col] + 91, cfg["rows"][row] - 4,
+                           columns[col + 1] - 91, cfg["rows"][row] - 4),
+                          fill=(26, 60, 83), width=1)
+        for row in range(len(cfg["rows"]) - 1):
+            for col in range(len(columns)):
+                x = columns[col] + (22 if col % 2 == 0 else -22)
+                draw.line((x, cfg["rows"][row] + 74, x,
+                           cfg["rows"][row + 1] - 68), fill=(23, 56, 80), width=1)
     if section_id == "languages":
         draw.text((43, 136), "WEB / FRONTEND  →  SCRIPTING",
                   fill=(93, 153, 184), font=font(17, True))
@@ -222,9 +223,12 @@ def render_frame(section_id, cfg, bg, nodes, phase, *, freeze=False):
             draw.point((px0, py0), fill=point_color)
             if n % 8 == 0:
                 draw.ellipse((px0 - 1, py0 - 1, px0 + 1, py0 + 1), fill=point_color)
-        draw.text((x0, y0 + 82), label, anchor="mm", font=font(28 if section_id == "languages" else 30, True),
+        # One fixed label baseline clears even MoonBit's tall contour at the
+        # bottom of its float; larger language names survive mobile scaling.
+        label_y = y0 + (120 if section_id == "languages" else 82)
+        draw.text((x0, label_y), label, anchor="mm", font=font(40 if section_id == "languages" else 30, True),
                   fill=(207, 228, 245))
-        if tag:
+        if tag and section_id != "languages":
             draw.text((x0, y0 + 116), tag, anchor="mm", font=font(16, True),
                       fill=(147, 195, 219))
 

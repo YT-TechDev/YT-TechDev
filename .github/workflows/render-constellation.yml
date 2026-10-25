@@ -8,6 +8,7 @@ on:
     paths:
       - "scripts/render_constellation.py"
       - "scripts/render_sections.py"
+      - "scripts/verify_languages.py"
       - "assets/moonbit-official.png"
       - "data/icon-paths.json"
       - "data/supplemental-icons.json"
@@ -28,35 +29,23 @@ jobs:
           python-version: "3.12"
       - name: Install renderer dependencies
         run: python -m pip install -r scripts/requirements.txt
+      - name: Record preserved artwork checksums
+        run: sha256sum assets/constellation-{frameworks,tools}.{gif,png} assets/moonbit-official.png > "$RUNNER_TEMP/constellation-preserved.sha256"
       - name: Render Languages and Markup only
         run: python scripts/render_sections.py --only languages
       - name: Verify Languages render only
         run: |
-          python - <<'PY'
-          import math
-          import sys
-          sys.path.insert(0, "scripts")
-          from render_sections import floating_offset
-          from PIL import Image
-          with Image.open("assets/constellation-languages.png") as p, \
-               Image.open("assets/constellation-languages.gif") as g:
-              assert p.size == g.size == (1600, 780)
-              assert g.n_frames == 36
-              assert g.info.get("loop") == 0
-          # Strict periodic seam and vertical-dominant displacement checks.
-          for index in range(10):
-              x0, y0 = floating_offset(index, 0.0)
-              x1, y1 = floating_offset(index, math.tau)
-              assert abs(x0 - x1) < 1e-10 and abs(y0 - y1) < 1e-10
-          print("Languages-only visual and loop continuity checks passed")
-          PY
+          python -m py_compile scripts/render_constellation.py scripts/render_sections.py scripts/verify_languages.py
+          python scripts/verify_languages.py
+          sha256sum --check "$RUNNER_TEMP/constellation-preserved.sha256"
       - name: Commit generated image assets
         run: |
-          git rm -f --ignore-unmatch assets/constellation.gif assets/constellation.png
-          git add -A assets
+          git add assets/constellation-languages.gif assets/constellation-languages.png
           if ! git diff --cached --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git commit -m "chore(profile): render sectioned skill constellations"
             git push origin "HEAD:${GITHUB_REF_NAME}"
+          else
+            echo "Generated Languages assets already match the committed files."
           fi
