@@ -9,7 +9,7 @@ import json
 import math
 from unittest.mock import patch
 
-from PIL import Image, ImageChops, ImageDraw, ImageStat
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageStat
 
 from render_sections import (
     ROOT, SEED, SECTIONS, floating_offset, make_language_background, prepared_nodes,
@@ -20,6 +20,31 @@ NAMES = (
     "HTML", "CSS", "JavaScript", "TypeScript", "VBScript",
     "Python", "Java", "MoonBit", "C++", "Rust",
 )
+
+
+def verify_wordmarks(poster, nodes):
+    """Two TS / three VBS letters, with no additional enclosing contour."""
+    for key, expected in (("typescript", 2), ("vbscript", 3)):
+        *_, x, y, _ = next(node for node in nodes if node[0] == key)
+        # The background is below 60 here. Join neighboring particle dots for
+        # contour connectivity only; name labels lie outside this crop.
+        mask = poster.crop((x - 100, y - 80, x + 100, y + 80)).convert("L")
+        mask = mask.point(lambda value: 255 if value > 80 else 0)
+        mask = mask.filter(ImageFilter.MaxFilter(3))
+        pixels = mask.load()
+        remaining = {(px, py) for py in range(mask.height) for px in range(mask.width)
+                     if pixels[px, py]}
+        components = 0
+        while remaining:
+            components += 1
+            pending = [remaining.pop()]
+            while pending:
+                px, py = pending.pop()
+                for point in ((px - 1, py), (px + 1, py), (px, py - 1), (px, py + 1)):
+                    if point in remaining:
+                        remaining.remove(point)
+                        pending.append(point)
+        assert components == expected, f"{key}: broken lettering or enclosing contour"
 
 
 def main():
@@ -79,6 +104,7 @@ def main():
     with Image.open(png_path) as png:
         assert png.size == (1600, 780)
         assert ImageChops.difference(png.convert("RGB"), expected_png).getbbox() is None
+        verify_wordmarks(png.convert("RGB"), nodes)
 
     for index in range(10):
         start = floating_offset(index, 0)
@@ -120,6 +146,7 @@ def main():
     assert min(steps) > 0, "Animation contains a frozen transition"
     assert steps[-1] <= max(steps[:-1]) * 1.25, "Encoded GIF jumps at its seam"
     print("Languages: 10 names, no status labels/connectors; PNG verified")
+    print("Typography: two TS / three VBS letter contours, no enclosing frames")
     print(f"Minimum moving-icon/label clearance: {min(gaps):.1f}px")
     print("GIF: 36 decoded frames, 1600x780, 150ms/frame, 5.4s, infinite loop")
     print("Cosmic background: deterministic, dark behind icons, no encoded shimmer")
