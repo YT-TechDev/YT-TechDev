@@ -98,6 +98,108 @@ def make_background(height: int, seed: int, width: int = WIDTH) -> Image.Image:
     return bg
 
 
+def make_language_background(height: int, seed: int, width: int) -> Image.Image:
+    """Static origin field: warped nebula, clustered dust and three star depths.
+
+    Build the haze at quarter resolution once; a separate local RNG leaves all
+    icon samples and motion untouched. No downloaded textures or extra packages.
+    """
+    rng = random.Random(seed)
+    size = (width // 4, height // 4)
+
+    def noise(columns, rows):
+        field = Image.new("L", (columns, rows))
+        field.putdata([rng.randrange(256) for _ in range(columns * rows)])
+        return field.resize(size, Image.Resampling.BICUBIC)
+
+    broad = noise(7, 4)
+    cloud = Image.blend(noise(15, 8), noise(33, 17), .32)
+    cloud = Image.blend(cloud, noise(68, 35), .14)
+    broad_px, cloud_px = broad.load(), cloud.load()
+    haze, density = Image.new("RGB", size), Image.new("L", size)
+    pixels, dust_density = haze.load(), density.load()
+    cfg = SECTIONS["languages"]
+    for y in range(size[1]):
+        v = y / (size[1] - 1)
+        for x in range(size[0]):
+            u = x / (size[0] - 1)
+            large, detail = broad_px[x, y] / 255, cloud_px[x, y] / 255
+            # A bent, broken cloud bank, with dark pockets rather than circles.
+            spine = .72 - .40 * u + .10 * math.sin(u * math.tau - .6)
+            spine += .16 * (large - .5)
+            bank = math.exp(-((v - spine) / (.10 + .10 * large)) ** 2)
+            veil = math.exp(-((v - spine - .13) / .30) ** 2)
+            structure = max(0, detail - .18) ** 1.6
+            cloud_light = (bank * .80 + veil * .22) * structure
+            # A dim blue wisp in the upper right balances the violet dust bank.
+            cloud_light += .14 * math.exp(-((u - .87) / .32) ** 2
+                                          - ((v - .15) / .29) ** 2) * large
+            # Soft protection follows existing UI coordinates, never their pixels.
+            quiet = max(
+                math.exp(-((u * width - cx) / 115) ** 4
+                         - ((v * height - cy) / 110) ** 4)
+                for cx in cfg["columns"] for cy in cfg["rows"]
+            )
+            cloud_light *= 1 - .35 * quiet
+            edge = max(.58, 1 - .28 * ((u - .5) ** 2 + (v - .5) ** 2))
+            violet = (1 - u) * .72 + .16 * large
+            tint = (24 + 29 * violet, 72 - 33 * violet, 122 - 16 * violet)
+            pixels[x, y] = tuple(round(base + c * cloud_light * edge)
+                                  for base, c in zip((4, 10, 26), tint))
+            dust_density[x, y] = round(min(255, bank * structure * 450))
+    bg = haze.resize((width, height), Image.Resampling.BICUBIC)
+    draw = ImageDraw.Draw(bg, "RGBA")
+
+    def quiet_area(x, y):
+        if y < 158 or y > height - 60:
+            return True
+        return any(abs(x - cx) < 113 and (abs(y - cy) < 105
+                   or abs(y - cy - 120) < 32)
+                   for cx in cfg["columns"] for cy in cfg["rows"])
+
+    # Dust follows the cloud density, not a uniform sheet of white noise.
+    for _ in range(4200):
+        x, y = rng.randrange(width), rng.randrange(height)
+        if rng.randrange(256) >= dust_density[x // 4, y // 4]:
+            continue
+        alpha = rng.randrange(5, 22) // (2 if quiet_area(x, y) else 1)
+        draw.point((x, y), fill=(95, 138, 179, alpha))
+
+    # Far field: many faint pinpoints; mid field: fewer, uneven small stars.
+    for layer, count in (("far", 680), ("mid", 125)):
+        for _ in range(count):
+            x, y = rng.randrange(width), rng.randrange(height)
+            if layer == "mid" and (quiet_area(x, y) or rng.random() < .25
+                                   * (1 - dust_density[x // 4, y // 4] / 255)):
+                continue
+            value = rng.randrange(24, 69) if layer == "far" else rng.randrange(75, 136)
+            if quiet_area(x, y):
+                value = round(value * .65)
+            color = (round(value * .66), round(value * .84), value, 255)
+            if layer == "mid" and rng.random() < .22:
+                draw.ellipse((x - .6, y - .6, x + .6, y + .6), fill=color)
+            else:
+                draw.point((x, y), fill=color)
+
+    # Near field: sparse soft glows, placed away from icons, names and headings.
+    glow = Image.new("RGBA", bg.size)
+    glow_draw = ImageDraw.Draw(glow)
+    stars = []
+    while len(stars) < 9:
+        x, y = rng.randrange(25, width - 25), rng.randrange(165, height - 65)
+        if quiet_area(x, y):
+            continue
+        stars.append((x, y))
+        glow_draw.ellipse((x - 4, y - 4, x + 4, y + 4), fill=(88, 166, 201, 64))
+    glow = glow.filter(ImageFilter.GaussianBlur(3))
+    bg.paste(glow, (0, 0), glow)
+    draw = ImageDraw.Draw(bg)
+    for x, y in stars:
+        draw.ellipse((x - 1, y - 1, x + 1, y + 1), fill=(108, 159, 184))
+        draw.point((x, y), fill=(167, 200, 216))
+    return bg
+
+
 def sample_official_moonbit(count, rng):
     """Sample silhouette and interior edges of MoonBit's OWN logo artwork.
 
@@ -246,18 +348,26 @@ def render_section(section_id, original, extra, frames):
     cfg = SECTIONS[section_id]
     height = cfg["height"]
     width = cfg.get("width", WIDTH)
-    bg = make_background(height, SEED + len(section_id) * 19, width)
+    background = make_language_background if section_id == "languages" else make_background
+    bg = background(height, SEED + len(section_id) * 19, width)
     nodes = prepared_nodes(section_id, cfg, original, extra["paths"])
     assets = ROOT / "assets"
     assets.mkdir(parents=True, exist_ok=True)
     path = assets / f"constellation-{section_id}"
     png = path.with_suffix(".png")
     gif = path.with_suffix(".gif")
-    render_frame(section_id, cfg, bg, nodes, 0, freeze=True).save(png, optimize=True)
+    poster = render_frame(section_id, cfg, bg, nodes, 0, freeze=True)
+    poster.save(png, optimize=True)
     animation = [
         render_frame(section_id, cfg, bg, nodes, math.tau * n / frames)
         for n in range(frames)
     ]
+    if section_id == "languages":
+        # One palette keeps static nebula/dust pixels identical in every frame.
+        # No error-diffusion noise, extra background motion or palette shimmer.
+        palette = poster.quantize(colors=256, method=Image.Quantize.MEDIANCUT)
+        animation = [frame.quantize(palette=palette, dither=Image.Dither.NONE)
+                     for frame in animation]
     animation[0].save(
         gif, format="GIF", save_all=True, append_images=animation[1:],
         duration=150 if section_id == "languages" else 105,

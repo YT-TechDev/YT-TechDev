@@ -61,3 +61,13 @@ Do not merge before visual approval. No changes to public profile main until the
 - Icon samples, TypeScript scale/corners, the CSS top seam, MoonBit source artwork, particle pulse and the 36-frame / 5.4s motion are unchanged.
 - `scripts/verify_languages.py` checks rendered text/lines, actual PNG content, continuous-motion label clearance, all 36 decoded GIF frames, timing, exact periodic render endpoints and the encoded last-to-first frame delta. Visual inspection at desktop and phone widths remains required.
 - Actions checks preserved artwork checksums and stages only the Languages GIF/PNG. If local and CI rendering match, the already-committed assets need no extra bot commit.
+
+### Cosmic Dust / Origin Layer (October 25, 2026)
+
+- Languages has a dedicated deep-navy background: an asymmetric, warped blue/violet cloud bank with a faint cyan-blue veil, dark pockets and low-opacity dust following the cloud density. Seeded, multiscale value noise creates the haze at quarter resolution, then Pillow upsamples it once. No external textures or new dependencies are used.
+- Three static star depths combine many faint distant pinpoints, fewer uneven mid-field stars and nine softly glowing foreground stars. Brighter stars avoid icons, names, headings and footer; the nebula is attenuated behind the existing icon centers. No grids, connectors or secondary labels are introduced.
+- The background is cached for the entire render. All Languages GIF frames share one palette with dithering disabled, keeping exposed background pixels exactly static and reducing palette shimmer and GIF size. Frameworks/Tools use their original background and encoding paths.
+- The ten-node data, point samples, icon geometry/colors, text positions, particle pulse and floating offsets are unchanged. Against baseline `9733f251609e8a3c0231f13ceaef6854f39b1de5`, all 36 Languages foreground renders and all 18 Frameworks/Tools phases match pixel for pixel when supplied the same background.
+- Verification also checks repeatable background pixels, dark backgrounds behind all ten icons and exact exposed-background stability across every decoded GIF frame. The 36-frame, 1600×780, 150ms/frame, 5.4s infinite loop and 18.7px minimum moving-icon/name clearance remain intact.
+- Local assets: GIF **3,841,553 bytes** (previously 6,277,441; approximately 39% smaller), PNG **162,994 bytes**. Encoded last-to-first mean RGB delta **2.2938**, below the interior maximum **2.8928**; rendered endpoints at 0 and 2π match exactly.
+- Visual review covers the PNG, decoded GIF frames 0/1/9/18/27/34/35, and 320px/375px previews. Physical-device playback and final aesthetic approval remain separate user review items.

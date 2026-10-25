@@ -12,7 +12,7 @@ from unittest.mock import patch
 from PIL import Image, ImageChops, ImageDraw, ImageStat
 
 from render_sections import (
-    ROOT, SEED, SECTIONS, floating_offset, make_background, prepared_nodes,
+    ROOT, SEED, SECTIONS, floating_offset, make_language_background, prepared_nodes,
     render_frame,
 )
 
@@ -31,7 +31,13 @@ def main():
     assert tuple(node[1] for node in nodes) == NAMES, "Language order changed"
     assert cfg["columns"] == (164, 482, 800, 1118, 1436)
     assert cfg["rows"] == (231, 531), "Expected five columns and two rows"
-    bg = make_background(780, SEED + len("languages") * 19, 1600)
+    bg = make_language_background(780, SEED + len("languages") * 19, 1600)
+    repeated_bg = make_language_background(780, SEED + len("languages") * 19, 1600)
+    assert ImageChops.difference(bg, repeated_bg).getbbox() is None, "Background seed is unstable"
+    # The icon field must stay dark even with the new stars, haze and dust.
+    for _, _, _, _, _, x, y, _ in nodes:
+        field = bg.crop((x - 105, y - 100, x + 105, y + 100)).convert("L")
+        assert field.getextrema()[1] < 60, "Background competes with an icon"
 
     texts, lines = [], []
     original_text, original_line = ImageDraw.ImageDraw.text, ImageDraw.ImageDraw.line
@@ -94,6 +100,19 @@ def main():
             assert frame.size == (1600, 780)
             frames.append(frame)
 
+    # Decode real GIF pixels: a common palette must prevent haze/dust shimmer.
+    background_mask = Image.new("L", (1600, 780), 255)
+    mask_draw = ImageDraw.Draw(background_mask)
+    mask_draw.rectangle((0, 0, 1599, 159), fill=0)
+    mask_draw.rectangle((0, 730, 1599, 779), fill=0)
+    for _, _, _, _, _, x, y, _ in nodes:
+        mask_draw.rectangle((x - 120, y - 110, x + 120, y + 110), fill=0)
+        mask_draw.rectangle((x - 153, y + 90, x + 153, y + 150), fill=0)
+    assert background_mask.getbbox(), "No exposed background checked"
+    for frame in frames[1:]:
+        delta = ImageChops.difference(frames[0], frame)
+        assert ImageChops.multiply(delta, background_mask.convert("RGB")).getbbox() is None, "Static background flickers"
+
     def distance(a, b):
         return sum(ImageStat.Stat(ImageChops.difference(a, b)).mean) / 3
 
@@ -103,6 +122,7 @@ def main():
     print("Languages: 10 names, no status labels/connectors; PNG verified")
     print(f"Minimum moving-icon/label clearance: {min(gaps):.1f}px")
     print("GIF: 36 decoded frames, 1600x780, 150ms/frame, 5.4s, infinite loop")
+    print("Cosmic background: deterministic, dark behind icons, no encoded shimmer")
     print(f"Loop pixel delta: {steps[-1]:.4f}; interior maximum: {max(steps[:-1]):.4f}")
     print("Asset and loop checks passed; visual review is a separate check")
 
