@@ -76,6 +76,14 @@ def glyph_svg(key: str, originals: dict, extras: dict) -> str:
         return (base + ' viewBox="0 0 240 160">'
                 '<text x="120" y="119" text-anchor="middle" font-family="sans-serif" '
                 'font-size="108" font-weight="bold" fill="white">R3F</text></svg>')
+    if key == "webassembly":
+        # Compact symbolic WASM hexagon. The upstream glyph had separated
+        # elements too small to recognize after GitHub mobile downscaling.
+        return (base + ' viewBox="0 0 240 160">'
+                '<path d="M120 8 222 52 222 109 120 153 18 109 18 52Z" '
+                'stroke="white" stroke-width="6" fill="none"/>'
+                '<text x="120" y="99" text-anchor="middle" font-family="sans-serif" '
+                'font-size="61" font-weight="bold" fill="white">WASM</text></svg>')
     if key == "vscode":
         # Illustrative symbol, not an official VS Code trademark.
         return (base + ' viewBox="0 0 120 120">'
@@ -210,7 +218,6 @@ def main():
         count = 680 if activity == "building" else 560
         if activity == "exploring":
             count = 480
-        print(f"Sampling outline: {key}", flush=True)
         pts = sample_outline(key, original, extras["paths"], count, rng)
         icons.append((key, label, activity, color, X[i % 4], Y[i // 4], pts))
     if len(icons) != 20:

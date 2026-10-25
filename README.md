@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/YT-TechDev/YT-TechDev/tree/main/assets">
+  <a href="https://github.com/YT-TechDev/YT-TechDev">
     <img src="./assets/constellation.gif" alt="Particle skill constellation: 20 technology and tool constellations, including Rust and C++ (exploring), ChatGPT and Claude (AI tools). Brightness represents project activity, not proficiency." width="100%" />
   </a>
 </p>

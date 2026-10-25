@@ -8,7 +8,7 @@ This repository's profile README embeds a generated **animated GIF**; GitHub REA
 - **TypeScript, PostgreSQL, Docker and Git** were distorted by a heuristic SVG viewBox in the first iteration. These are now rendered using explicitly normalized 24×24 paths.
 - Repaired icon paths and additional C++, Linux, WebAssembly, Three.js, Blender, Claude paths are from [Simple Icons](https://github.com/simple-icons/simple-icons) pinned at commit `90646e4bf7f3b89df6c37e65baf3e7bc759a517c`; stored as `data/supplemental-icons.json`.
 - JavaScript, Node.js, Python and Cloudflare continue to use the pinned portfolio paths.
-- React/Next.js/R3F are locally drawn particle motifs. VS Code is an **illustrative code symbol**, ChatGPT is an **abstract particle knot**, not their official marks.
+- React/Next.js/R3F and WebAssembly are locally drawn particle motifs. VS Code is an **illustrative code symbol**, ChatGPT is an **abstract particle knot**, not their official marks.
 
 ## Editorial semantics
 
