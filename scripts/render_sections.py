@@ -157,6 +157,15 @@ def prepared_nodes(section_id, cfg, originals, extras):
     return nodes
 
 
+def floating_offset(index: int, phase: float) -> tuple[float, float]:
+    """Smooth periodic zero-gravity drift for one language constellation."""
+    x = (1.6 * math.sin(phase + index * .61)
+         + .35 * math.sin(2.0 * phase + index * .37))
+    y = (10.5 * math.sin(phase + index * .83)
+         + 1.8 * math.sin(2.0 * phase + index * .42))
+    return x, y
+
+
 def render_frame(section_id, cfg, bg, nodes, phase, *, freeze=False):
     result = bg.copy()
     draw = ImageDraw.Draw(result)
@@ -185,14 +194,29 @@ def render_frame(section_id, cfg, bg, nodes, phase, *, freeze=False):
                   fill=(93, 153, 184), font=font(17, True))
 
     for i, (key, label, category, color, tag, x0, y0, points) in enumerate(nodes):
-        dx = 0 if freeze else math.sin(phase + i * .63) * 2.4
-        dy = 0 if freeze else math.cos(phase + i * .78) * 2.8
+        if freeze:
+            dx, dy = 0.0, 0.0
+        elif section_id == "languages":
+            # Seamless 5.4s zero-gravity loop: independent phase offsets per
+            # icon, a slow vertical float and only subtle horizontal drift.
+            # Integer harmonics ensure f(0) == f(2*pi) at the GIF loop seam.
+            dx, dy = floating_offset(i, phase)
+        else:
+            # Other sections are deliberately unchanged until their review.
+            dx = math.sin(phase + i * .63) * 2.4
+            dy = math.cos(phase + i * .78) * 2.8
         x, y = x0 + dx, y0 + dy
         brightness = ACTIVITY_BRIGHTNESS[category]
         rgb = tuple(int(color[j:j + 2], 16) for j in (1, 3, 5))
         # Bright, dense outlines: categories conveyed by labels, not dimness.
         for n, (px, py) in enumerate(points):
-            pulse = 1 if freeze else .92 + .08 * math.sin(phase * 1.6 + n * .19 + i)
+            if freeze:
+                pulse = 1.0
+            elif section_id == "languages":
+                # Gentle breathing, with exactly periodic endpoints.
+                pulse = .96 + .04 * math.sin(phase + n * .13 + i * .7)
+            else:
+                pulse = .92 + .08 * math.sin(phase * 1.6 + n * .19 + i)
             point_color = tuple(min(255, round(c * brightness * pulse)) for c in rgb)
             px0, py0 = round(x + px), round(y + py)
             draw.point((px0, py0), fill=point_color)
@@ -232,7 +256,8 @@ def render_section(section_id, original, extra, frames):
     ]
     animation[0].save(
         gif, format="GIF", save_all=True, append_images=animation[1:],
-        duration=105, loop=0, disposal=2, optimize=True,
+        duration=150 if section_id == "languages" else 105,
+        loop=0, disposal=2, optimize=True,
     )
     with Image.open(png) as p, Image.open(gif) as g:
         assert p.size == g.size == (width, height), "Bad image geometry"
@@ -242,10 +267,10 @@ def render_section(section_id, original, extra, frames):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--frames", type=int, default=18)
+    parser.add_argument("--frames", type=int, default=None)
     parser.add_argument("--only", choices=list(SECTIONS))
     args = parser.parse_args()
-    if not 2 <= args.frames <= 80:
+    if args.frames is not None and not 2 <= args.frames <= 80:
         parser.error("--frames must be between 2 and 80")
     original = json.loads((ROOT / "data/icon-paths.json").read_text("utf-8"))
     extras = json.loads((ROOT / "data/supplemental-icons.json").read_text("utf-8"))
@@ -262,7 +287,8 @@ def main():
     if total != 25 or len(set(keys)) != total:
         raise ValueError("Unexpected icon count or duplicate key")
     for section_id in ([args.only] if args.only else SECTIONS):
-        render_section(section_id, original, extras, args.frames)
+        frame_count = args.frames if args.frames is not None else (36 if section_id == "languages" else 18)
+        render_section(section_id, original, extras, frame_count)
 
 
 if __name__ == "__main__":

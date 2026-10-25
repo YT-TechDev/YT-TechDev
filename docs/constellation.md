@@ -45,3 +45,10 @@ Do not merge before visual approval. No changes to public profile main until the
 - TypeScript uses an optically enlarged, softly rounded **illustrative TS monogram**; the pinned upstream SVG still remains in the supplemental dataset for provenance.
 - VBScript uses a neutral, explicitly labeled VBS outline rather than reusing an IDE trademark. Its original portfolio paths remain stored.
 - No visual changes to the Frameworks or Tools generated assets in this phase.
+
+### Languages CSS outline and orbital motion refinement (October 25, 2026)
+
+- CSS3's upper horizontal shield seam is explicitly restored in the CairoSVG shape at original 128×128 geometry, so the contour sampler retains it rather than relying on antialiasing thresholds.
+- The Languages renderer uses **36 frames × 150ms = 5.4 seconds** for a gentle, vertical-dominant weightless loop, with small horizontal drift and per-node phase offsets.
+- The motion and particle pulse use integer-harmonic periodic functions so the GIF wraps without a discontinuity at the loop seam; GitHub Actions checks the seam numerically.
+- Only `Languages & Markup` artwork is regenerated. Frameworks & Tools images and animation remain untouched.

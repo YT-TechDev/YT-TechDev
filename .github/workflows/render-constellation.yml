@@ -33,13 +33,22 @@ jobs:
       - name: Verify Languages render only
         run: |
           python - <<'PY'
+          import math
+          import sys
+          sys.path.insert(0, "scripts")
+          from render_sections import floating_offset
           from PIL import Image
           with Image.open("assets/constellation-languages.png") as p, \
                Image.open("assets/constellation-languages.gif") as g:
               assert p.size == g.size == (1600, 780)
-              assert g.n_frames == 18
+              assert g.n_frames == 36
               assert g.info.get("loop") == 0
-          print("Languages-only visual asset checks passed")
+          # Strict periodic seam and vertical-dominant displacement checks.
+          for index in range(10):
+              x0, y0 = floating_offset(index, 0.0)
+              x1, y1 = floating_offset(index, math.tau)
+              assert abs(x0 - x1) < 1e-10 and abs(y0 - y1) < 1e-10
+          print("Languages-only visual and loop continuity checks passed")
           PY
       - name: Commit generated image assets
         run: |

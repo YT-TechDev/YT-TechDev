@@ -116,11 +116,17 @@ def glyph_svg(key: str, originals: dict, extras: dict) -> str:
                 'font-family="sans-serif" font-size="79" font-weight="bold" '
                 'fill="white">TS</text></svg>')
     if key in ("html", "css"):
-        # Devicon's complete shield paths preserve inner 5 / 3 cutouts.
+        # Devicon's full shields preserve the 5/3 inner shapes.
         if key not in extras:
             raise ValueError(f"Missing Devicon shield: {key}")
-        return (base + ' viewBox="0 0 128 128">'
-                + f'<path fill="white" d="{extras[key]}"/></svg>')
+        outline = f'<path fill="white" d="{extras[key]}"/>'
+        if key == "css":
+            # Explicit top seam: the shield's thin upper horizontal edge
+            # disappeared during contour rasterization on mobile previews.
+            # This follows the Devicon CSS3 shield's x=8.76..119.24 top edge.
+            outline += ('<path d="M9 2 H119" fill="none" stroke="white" '
+                        'stroke-width="3.5" stroke-linecap="round"/>')
+        return base + ' viewBox="0 0 128 128">' + outline + '</svg>'
     if key == "vbscript":
         # Portfolio VBS artwork resembles a Visual Studio mark, so use a
         # neutral labeled wordmark instead of misattributing that trademark.
