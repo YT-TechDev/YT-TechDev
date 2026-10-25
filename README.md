@@ -1,36 +1,45 @@
-# Yuto / YT-TechDev
+<h1 align="center">YT-TechDev</h1>
 
-Yuto / YT-TechDev is an independent web and software developer building open-source projects around modern web development, local-first applications, developer tools, and AI-assisted engineering workflows.
+<p align="center">
+  Independent software developer building interactive systems, open-source developer tools and practical engineering workflows.
+</p>
 
-I work mainly with TypeScript, React, Next.js, React Three Fiber, and Three.js. I am also studying English, so I prefer clear, direct technical communication over marketing-heavy language.
+<p align="center">
+  <a href="https://github.com/YT-TechDev/YT-TechDev/tree/main/assets">
+    <img src="./assets/constellation.svg" alt="Particle skill constellation: React, TypeScript, R3F, Next.js, JavaScript, Node.js, Docker, PostgreSQL, Python, Cloudflare, Git, and Rust (exploring). Brightness represents project activity, not proficiency." width="100%" />
+  </a>
+</p>
 
-## Current focus
+<p align="center"><sub>Each star is a particle outline. Brightness is an editorial indicator of project activity, <strong>not</strong> a skill rating. Rust is explicitly exploratory.</sub></p>
 
-- Building small, maintainable OSS libraries and application foundations.
-- Exploring local-first desktop and web workflows with explicit privacy boundaries.
-- Designing predictable React and React Three Fiber architecture.
-- Improving documentation, validation habits, and AI-assisted development workflows.
+## Open-source engineering
 
-## Featured projects
+| Project | Focus |
+| :-- | :-- |
+| **[Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow)** | A deterministic interaction-flow runtime built with MoonBit and WebAssembly. |
+| **[Frontend Analysis](https://github.com/YT-TechDev/frontend-analysis)** | Browser-independent frontend analysis and diagnostics. |
+| **[R3F Interactive Flow](https://github.com/YT-TechDev/r3f-interactive-flow)** | Phase-based interaction controls for React Three Fiber experiences. |
+| **[Local Virtual Kit](https://github.com/YT-TechDev/local-virtual-kit)** | Local-first virtual character tooling with native tracking and a web preview. |
 
-- [local-virtual-kit](https://github.com/YT-TechDev/local-virtual-kit) — Local-first VTuber and virtual character toolkit with a native tracking core, MotionFrame protocol, React Three Fiber web preview, and Electron desktop workflow.
-- [r3f-interactive-flow](https://github.com/YT-TechDev/r3f-interactive-flow) — A small control layer for phase-based interactive React Three Fiber sites, including flow state, transition progress, input hooks, and a Canvas frame bridge.
-- [agent-skills-lab](https://github.com/YT-TechDev/agent-skills-lab) — A public lab for designing, evaluating, versioning, and packaging reusable AI agent skills and engineering workflows.
-- [engineering-agents](https://github.com/YT-TechDev/engineering-agents) — Documentation-only guidance, templates, and checklists for scoped AI-assisted engineering planning and review workflows.
+## What I'm working on
 
-## Selected technologies
+- Developer tooling, frontend architecture and interactive graphics.
+- Reproducible workflows with clear boundaries and evidence-based validation.
+- Open-source components designed to be understandable and maintainable.
 
-- **Frontend:** TypeScript, React, Next.js, Tailwind CSS, Framer Motion
-- **3D and interactive web:** React Three Fiber, Three.js
-- **Backend and data:** Supabase, PostgreSQL, Resend
-- **Desktop and native:** Electron, Node.js, C++ development and learning
-- **Infrastructure:** Vercel, Cloudflare, Docker, Kubernetes fundamentals, AWS, Google Cloud
-- **Engineering:** OSS maintenance, library design, documentation systems, CI, local-first architecture, and AI-assisted development
+<p align="center">
+  <a href="https://github.com/YT-TechDev?tab=repositories">Explore repositories</a>
+  ·
+  <a href="https://yttechdev.com">Portfolio</a>
+</p>
 
-## Development principles
+<details>
+<summary>About the constellation</summary>
 
-- Keep architecture clear and responsibilities separated.
-- Prefer predictable behavior over hidden convenience.
-- Treat documentation as part of the implementation.
-- Design libraries and workflows for long-term maintainability.
-- Use evidence-driven development: verify behavior, document assumptions, and avoid unsupported claims.
+The artwork is generated from technology-logo outlines taken from a pinned revision of my [portfolio's particle icon assets](https://github.com/YT-TechDev/yt-techdev-portfolio/blob/6e4ea4fdbea13d57e7eb4f0f120452a2baf63a27/components/home/Skills/particle/svgPaths.ts), plus the Rust icon from [Simple Icons](https://github.com/simple-icons/simple-icons).
+
+The source data and renderer live in this profile repository. Regeneration is repeatable and does not require React in the README. GitHub README pages cannot execute arbitrary React/TSX or WebGL. An animated GIF can be generated from the same renderer; the committed SVG is the lightweight, always-visible fallback.
+
+Labels refer to public projects, usage and areas of exploration. They do not assert levels of competence or measure GitHub activity automatically.
+
+</details>
