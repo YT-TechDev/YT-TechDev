@@ -1,39 +1,40 @@
-# Skill Constellation — GitHub profile artwork
+# Skill Constellation — sectioned README artwork
 
-This repository's profile README embeds a generated **animated GIF**; GitHub README pages do not execute React/TSX, WebGL or interactive canvases.
+This profile embeds generated GIFs, since GitHub README markdown cannot run React/TSX/WebGL. Output is explicitly **non-interactive**.
 
-## Provenance and repairs
+## Layout and editorial choices
 
-- The original portfolio paths remain pinned in `data/icon-paths.json` from `YT-TechDev/yt-techdev-portfolio` commit `6e4ea4fdbea13d57e7eb4f0f120452a2baf63a27` (`components/home/Skills/particle/svgPaths.ts`).
-- **TypeScript, PostgreSQL, Docker and Git** were distorted by a heuristic SVG viewBox in the first iteration. These are now rendered using explicitly normalized 24×24 paths.
-- Repaired icon paths and additional C++, Linux, WebAssembly, Three.js, Blender, Claude paths are from [Simple Icons](https://github.com/simple-icons/simple-icons) pinned at commit `90646e4bf7f3b89df6c37e65baf3e7bc759a517c`; stored as `data/supplemental-icons.json`.
-- JavaScript, Node.js, Python and Cloudflare continue to use the pinned portfolio paths.
-- React/Next.js/R3F and WebAssembly are locally drawn particle motifs. VS Code is an **illustrative code symbol**, ChatGPT is an **abstract particle knot**, not their official marks.
+The previous 20-node poster was difficult to read on phones, especially the bottom two rows. This iteration splits **21 nodes** into three independently generated star maps:
 
-## Editorial semantics
+- **Languages (6):** TypeScript, JavaScript, Python, MoonBit, C++, Rust
+- **Frameworks & Runtimes (6):** React, Next.js, Node.js, R3F, Three.js, WebAssembly
+- **Tools & Platforms (9):** PostgreSQL, Docker, Git, Cloudflare, Linux, VS Code, Blender, ChatGPT, Claude
 
-- **Building**: represented in active public development.
-- **Used**: appears in projects or tooling workflows, not an expertise rating.
-- **Exploring**: learning or interest, not professional proficiency (C++ and Rust).
-- **AI tool**: ChatGPT and Claude are tools, not programming-language competencies.
+The 3-column layout makes each icon and caption larger in the rendered README. Brightness is intentionally high across all groups, including `Exploring`, and conveys **no proficiency ranking**. MoonBit is marked as used in [Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow) based on the public MoonBit/WebAssembly runtime implementation. C++ and Rust remain Exploring. ChatGPT/Claude are explicitly AI tools, not programming languages.
 
-No GitHub stats are queried; brightness is a curated activity visualization. Assembly and RAOS are deliberately not listed.
+## Sources
 
-## Rendering
+- Frozen portfolio outline dataset: `data/icon-paths.json` from `YT-TechDev/yt-techdev-portfolio` at `6e4ea4fdbea13d57e7eb4f0f120452a2baf63a27`.
+- Repaired TypeScript, PostgreSQL, Docker and Git outlines and other supplemental marks: `data/supplemental-icons.json` from Simple Icons pinned at `90646e4bf7f3b89df6c37e65baf3e7bc759a517c`.
+- MoonBit has an **illustrative moon/M symbol**, not its official brand logo.
+- React / Next.js / R3F / WebAssembly and VS Code / ChatGPT have illustrative symbols. Other normalized logo outlines come from the pinned sources.
+
+Neither RAOS nor Assembly are listed. The portfolio source is referenced, not mutated.
+
+## Regeneration
 
 ```bash
 python -m pip install -r scripts/requirements.txt
-python scripts/render_constellation.py --out assets/constellation.gif
-python scripts/render_constellation.py --static --out assets/constellation.png
+python scripts/render_sections.py
 ```
 
-Generated images are committed by GitHub Actions when permitted. The README uses GIF and PNG is the static fallback. The older 12-icon SVG has been removed rather than retained as an inconsistent fallback.
+The renderer emits PNG and 18-frame GIFs for each section (six files). GitHub Actions verifies dimensions (1200×560, 1200×560, 1200×810) and frame counts, then commits the generated assets. The old combined `assets/constellation.gif` and `assets/constellation.png` are removed as obsolete.
 
-## Review before merging
+## Review gate
 
-- [ ] TypeScript, PostgreSQL, Docker and Git display complete recognizable outlines.
-- [ ] 20 nodes display, in 4 columns by 5 rows; verify phone-scale text.
-- [ ] GIF is animated with 24 frames at 1200×960.
-- [ ] Make a final GitHub PR visual check before merge.
+- [ ] Render workflows PASS on the latest branch HEAD
+- [ ] Inspect the actual updated PNGs, not only automated assertions
+- [ ] Preview all three GIFs at phone width via the draft PR
+- [ ] Confirm labels, clipping, MoonBit illustrative mark and color contrast
 
-The portfolio repository remains untouched.
+Do not merge before visual approval. No changes to public profile main until the PR is merged.

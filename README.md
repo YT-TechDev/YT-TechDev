@@ -4,28 +4,44 @@
   Independent software developer building interactive systems, open-source developer tools and practical engineering workflows.
 </p>
 
+## Skill Constellation
+
+A small constellation of languages, frameworks and tools I build with or explore. Labels such as **Exploring** describe the context, not a proficiency score.
+
+### Languages
+
 <p align="center">
-  <a href="https://github.com/YT-TechDev/YT-TechDev">
-    <img src="./assets/constellation.gif" alt="Particle skill constellation: 20 technology and tool constellations, including Rust and C++ (exploring), ChatGPT and Claude (AI tools). Brightness represents project activity, not proficiency." width="100%" />
-  </a>
+  <img src="./assets/constellation-languages.gif" alt="Languages particle constellation: TypeScript, JavaScript, Python, MoonBit (used in Web Interactive Flow), C++ and Rust (exploring)." width="100%" />
 </p>
 
-<p align="center"><sub>20 particle constellations for languages, systems and tools. Brightness reflects development activity, <strong>not</strong> skill ratings. Rust and C++ are exploring; ChatGPT and Claude are AI tools.</sub></p>
+### Frameworks & Runtimes
+
+<p align="center">
+  <img src="./assets/constellation-frameworks.gif" alt="Frameworks and runtimes particle constellation: React, Next.js, Node.js, React Three Fiber, Three.js and WebAssembly." width="100%" />
+</p>
+
+### Tools & Platforms
+
+<p align="center">
+  <img src="./assets/constellation-tools.gif" alt="Tools particle constellation: PostgreSQL, Docker, Git, Cloudflare, Linux, VS Code, Blender, ChatGPT and Claude. ChatGPT and Claude are categorized as AI tools." width="100%" />
+</p>
+
+<p align="center"><sub>All particle stars remain legible; activity is described with labels instead of dimming learning interests. C++ / Rust: exploring. ChatGPT / Claude: AI tools.</sub></p>
 
 ## Open-source engineering
 
 | Project | Focus |
 | :-- | :-- |
-| **[Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow)** | A deterministic interaction-flow runtime built with MoonBit and WebAssembly. |
+| **[Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow)** | Deterministic interaction-flow runtime built with MoonBit and WebAssembly. |
 | **[Frontend Analysis](https://github.com/YT-TechDev/frontend-analysis)** | Browser-independent frontend analysis and diagnostics. |
 | **[R3F Interactive Flow](https://github.com/YT-TechDev/r3f-interactive-flow)** | Phase-based interaction controls for React Three Fiber experiences. |
-| **[Local Virtual Kit](https://github.com/YT-TechDev/local-virtual-kit)** | Local-first virtual character tooling with native tracking and a web preview. |
+| **[Local Virtual Kit](https://github.com/YT-TechDev/local-virtual-kit)** | Local-first virtual character tooling with native tracking and web preview. |
 
-## What I'm working on
+## Current focus
 
-- Developer tooling, frontend architecture and interactive graphics.
-- Reproducible workflows with clear boundaries and evidence-based validation.
-- Open-source components designed to be understandable and maintainable.
+- Designing and maintaining developer tools, web runtimes and interactive experiences.
+- Reproducible workflows with clear responsibility and validation boundaries.
+- Documentation, architecture and long-term maintainability for open-source software.
 
 <p align="center">
   <a href="https://github.com/YT-TechDev?tab=repositories">Explore repositories</a>
@@ -34,12 +50,10 @@
 </p>
 
 <details>
-<summary>About the constellation</summary>
+<summary>About the constellation and icon provenance</summary>
 
-The artwork is generated from technology-logo outlines taken from a pinned revision of my [portfolio's particle icon assets](https://github.com/YT-TechDev/yt-techdev-portfolio/blob/6e4ea4fdbea13d57e7eb4f0f120452a2baf63a27/components/home/Skills/particle/svgPaths.ts), and repaired or supplemental 24×24 icon paths from [Simple Icons](https://github.com/simple-icons/simple-icons).
+Images are generated offline from pinned technology icon outlines. Original SVG path data comes from [my portfolio's icon renderer](https://github.com/YT-TechDev/yt-techdev-portfolio/blob/6e4ea4fdbea13d57e7eb4f0f120452a2baf63a27/components/home/Skills/particle/svgPaths.ts), with additional and repaired normalized paths from [Simple Icons](https://github.com/simple-icons/simple-icons). MoonBit, React Three Fiber, WebAssembly, ChatGPT and VS Code have illustrative particle glyphs, not official logos.
 
-The source data and renderer live in this profile repository. The illustrative VS Code and ChatGPT motifs are not official brand logos. Regeneration is repeatable and does not require React in the README. GitHub README pages cannot execute arbitrary React/TSX or WebGL. The README displays the generated GIF; a lightweight static SVG and PNG are also retained.
-
-Labels refer to public projects, usage and areas of exploration. They do not assert levels of competence or measure GitHub activity automatically.
+The source scripts and artwork live exclusively in this GitHub profile repository. GitHub README does not run TSX/WebGL; these are generated, non-interactive animations. See [the renderer documentation](./docs/constellation.md) for source pins, regeneration and limitations.
 
 </details>
