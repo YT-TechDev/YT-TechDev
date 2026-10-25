@@ -210,6 +210,7 @@ def main():
         count = 680 if activity == "building" else 560
         if activity == "exploring":
             count = 480
+        print(f"Sampling outline: {key}", flush=True)
         pts = sample_outline(key, original, extras["paths"], count, rng)
         icons.append((key, label, activity, color, X[i % 4], Y[i // 4], pts))
     if len(icons) != 20:
