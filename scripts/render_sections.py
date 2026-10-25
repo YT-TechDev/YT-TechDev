@@ -383,6 +383,13 @@ def render_frame(section_id, cfg, bg, nodes, phase, *, freeze=False):
 
 def render_section(section_id, original, extra, frames):
     cfg = SECTIONS[section_id]
+    if section_id == "frameworks":
+        from framework_orbits import QuietOrbits, prepared_contours, render_assets
+        sources = {spec[0]: glyph_svg(spec[0], original, extra["paths"])
+                   for spec in cfg["icons"]}
+        nodes = prepared_contours(cfg, COLUMNS, sources)
+        render_assets(QuietOrbits(cfg, nodes, font, ACTIVITY_BRIGHTNESS), ROOT / "assets", frames)
+        return
     height = cfg["height"]
     width = cfg.get("width", WIDTH)
     background = make_language_background if section_id == "languages" else make_background
@@ -443,7 +450,8 @@ def main():
     if total != 25 or len(set(keys)) != total:
         raise ValueError("Unexpected icon count or duplicate key")
     for section_id in ([args.only] if args.only else SECTIONS):
-        frame_count = args.frames if args.frames is not None else (36 if section_id == "languages" else 18)
+        defaults = {"languages": 36, "frameworks": 64, "tools": 18}
+        frame_count = args.frames if args.frames is not None else defaults[section_id]
         render_section(section_id, original, extras, frame_count)
 
 

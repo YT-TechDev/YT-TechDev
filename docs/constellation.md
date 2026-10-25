@@ -10,7 +10,7 @@ The previous 20-node poster was difficult to read on phones, especially the bott
 - **Frameworks & Runtimes (6):** React, Next.js, Node.js, R3F, Three.js, WebAssembly
 - **Tools & Platforms (9):** PostgreSQL, Docker, Git, Cloudflare, Linux, VS Code, Blender, ChatGPT, Claude
 
-Frameworks and tools retain their validated 3-column layouts, without any new edits this phase. The Languages image is a distinct 5-column × 2-row, 1600×780 layout, arranged for left-to-right frontend → backend reading. It displays only particle icons and language names, without secondary status labels or connector lines. Brightness is intentionally high across all groups and conveys **no proficiency ranking**. Internal activity metadata is retained: MoonBit is used in [Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow), based on the public MoonBit/WebAssembly runtime implementation; C++ and Rust remain Exploring. ChatGPT/Claude are explicitly AI tools, not programming languages.
+Frameworks now uses **Quiet Orbits / Structure**, with two shared elliptical paths behind the original six particle logos. Tools retains its original three-column layout and awaits its Space Station / Observatory design phase. The completed Languages image is a distinct 5-column × 2-row, 1600×780 layout, arranged for left-to-right frontend → backend reading. It displays only particle icons and language names, without secondary status labels or connector lines. Brightness is intentionally high across all groups and conveys **no proficiency ranking**. Internal activity metadata is retained: MoonBit is used in [Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow), based on the public MoonBit/WebAssembly runtime implementation; C++ and Rust remain Exploring. ChatGPT/Claude are explicitly AI tools, not programming languages.
 
 ## Sources
 
@@ -25,20 +25,57 @@ Neither RAOS nor Assembly are listed. The portfolio source is referenced, not mu
 
 ```bash
 python -m pip install -r scripts/requirements.txt
-python scripts/render_sections.py --only languages
+python scripts/render_sections.py --only frameworks
+python scripts/verify_frameworks.py --determinism --protected
 python scripts/verify_languages.py
 ```
 
-The renderer supports all three sections, but this phase runs **`python scripts/render_sections.py --only languages`** and verifies only the language PNG and 36-frame GIF at 1600×780. Frameworks and Tools binaries remain unchanged. The old combined `assets/constellation.gif` and `assets/constellation.png` were removed as obsolete.
+The canonical Frameworks command defaults to **64 frames × 100ms = 6.4 seconds** at 1200×560. Its PNG is a neutral, undrifted/unpulsed pose with orbital lights at phase zero; it is a lossless RGB poster, not a decoded GIF frame. `--frames` remains available for disposable experiments, but the production verifier requires 64 frames. Languages still supports `--only languages` (36×150ms), and Tools still supports `--only tools` (18 frames, original encoding). Section selection writes only the chosen pair of images. The old combined assets were removed as obsolete.
+
+Frozen Languages verification uses CairoSVG and system fonts/FreeType in addition to the pinned Python requirements. The approved CI-compatible environment uses system FreeType 2.14.3; a machine with a different SVG rasterizer can reject the frozen Languages PNG. Do not regenerate or replace Languages to make a Frameworks change pass. Frameworks' audited contour fixture removes this source of silhouette variation from its production rendering.
 
 ## Review gate
 
-- [ ] Language-only workflow PASS on the latest branch HEAD
-- [ ] Inspect the updated Languages PNG; specifically TypeScript corners/scale and official MoonBit rabbit silhouette, plus HTML, CSS, Java, VBScript.
+- [ ] Exact final content passes the section-aware workflow and both verifiers
+- [ ] Inspect Quiet Orbits PNG/GIF, all six identities, protected arcs and loop transition
 - [ ] Preview all three GIFs at phone width via the draft PR
 - [ ] Confirm labels, clipping, the official MoonBit contour and color contrast
 
 Do not merge before visual approval. No changes to public profile main until the PR is merged.
+
+## Quiet Orbits / Structure (October 25, 2026)
+
+Languages tells the Cosmic Dust / Origin Layer story; Frameworks expresses the emergence of structure with two shared orbits. The decorative paths do not indicate dependencies, proficiency or a central technology. No hub, per-logo rings, arrows or new badges are present.
+
+- Geometry is fixed at center (600,281), radii (574,138), rotation −7°, and center (606,282), radii (657,217), rotation 9°. Three-times-resolution curves are downsampled once; a restrained blur adds depth. Broad arc breaks and fixed exclusion regions keep the curves subordinate to the logos.
+- Six original anchors remain X=(187,600,1013), Y=(177,385). Particle motion uses horizontal ±1.2px and vertical ±5px integer-harmonic functions; pulse is `.96 + .04*sin(phase + sample*.19 + index)`. Light points travel short sinusoidal arcs. Background and orbital curves are built once per renderer instance.
+- Names are 36px bold, anchored 88px below each logo center. Header/footer fonts and positions are preserved from the committed Frameworks baseline, including its original right footer anchor at X=1158 (the study image placed it one pixel left).
+- Masks contain each full floating envelope, emphasized-dot radius and rounded pixel centers, every name, header and footer. An outer fixed falloff softens line ends. Alpha is forced to zero inside the protected core **after** glow and antialiasing; masks never follow instantaneous logo positions.
+- A single deterministic 256-color palette is derived from five fixed animation phases. Dithering is disabled. All frames use this color table; source RGB and decoded GIF backgrounds must both remain exactly static outside the continuous animation envelope.
+
+### Baseline reconciliation and frozen contours
+
+The historical Frameworks PNG was last generated in asset commit `08eb31353501607086cd206bbd4de43d87ac60c4`, using renderer source `6624f5dc94588a4c7ea6c1391bdb53ddcda6b10a`. Its SHA-256 is `aec3d751231c5f75f5b8212a0888ffc354570b13d9055dad3224f4e66a8c5925`.
+
+The 7,483-pixel mismatch at the pre-implementation HEAD was reproduced exactly with Python 3.12.14, Pillow 12.3.0, CairoSVG 2.8.2, Cairo 1.18.0 and system FreeType 2.13.2. It contains 6,470 changed logo pixels and 1,013 changed footer pixels, with zero background, star, name or header changes. Two historical code changes account for the source mismatch: a six-pixel transparent border added to the shared contour sampler in `d080d91` changes edge candidates/shuffle results, and the right footer anchor changed from 1158 to 1157 in `755d294`. The old asset had deliberately remained frozen.
+
+Restoring the historical source leaves 600 differing WebAssembly pixels under system FreeType 2.13.2. Changing only system FreeType to 2.14.3 eliminates that residual: **zero changed pixels and byte-identical PNG SHA-256**. Changing Cairo 1.18.0 to 1.18.4 alone does not eliminate it. The old Actions log identifies Ubuntu 26.04.1 and Python 3.12.15 but did not record system FreeType; this controlled reproduction establishes a matching environment without inventing the missing historical version record.
+
+`scripts/framework_contours.json` preserves the exact original 1,000 ordered samples per logo from that matching reproduction. This additional production input is necessary to keep the original particle silhouette stable across FreeType changes. It records provenance, SVG hashes, seed, environment and six independently extracted committed-logo mask hashes. `prepared_contours` rejects fixture or SVG changes. `render_constellation.py`, the pinned icon datasets, Languages and Tools samplers remain untouched. No NumPy or new runtime package is needed.
+
+To reconstruct the fixture provenance independently, extract the historical commit with `git archive`, import its `prepared_nodes('frameworks', ...)`, and render its frozen phase-zero poster with the pinned Python dependencies, Cairo 1.18.0 and system FreeType 2.14.3. The DejaVu Sans Bold source font SHA-256 is `5c1247acef7f2b8522a31742c76d6adcb5569bacc0be7ceaa4dc39dd252ce895`. Compare the poster to the historical PNG before retaining samples. Production rendering uses the frozen samples directly, so this historical environment is not required for the canonical Frameworks command.
+
+### Verification and CI isolation
+
+`verify_frameworks.py` checks actual PNG pixels, all 64 fully decoded GIF frames against their intended quantized RGB renders, every duration, total time and loop flag. It checks the six original binary logo masks, identities/colors/anchors, typography bounds, continuous floating envelopes, zero orbital alpha in protected regions, mathematical endpoints, decoded seam versus normal adjacent-frame changes, palette fidelity, static background pixels and 320/375px label contrast. `--determinism` runs the canonical CLI twice in a disposable checkout and compares both output hashes to the validated images. `--protected` additionally asserts the frozen Languages/Tools Git Blob SHAs for this phase.
+
+The workflow keeps the Languages render/verification pipeline and adds Frameworks rendering/verification. Dedicated Frameworks changes select Frameworks; dedicated Languages changes select Languages; explicit mixed changes select both. A generic shared-renderer-only push retains the Languages generation path, while both content verifiers still run, so ambiguous cross-section changes fail rather than being silently accepted. Manual dispatch provides explicit `frameworks`, `languages` and `both` choices. Frameworks-only runs verify the existing Languages PNG/GIF without rewriting them; Languages-only runs preserve the Frameworks pair. Tools is never a generated write target in this workflow.
+
+Every unselected tracked file is hashed before generation and checked afterward. Only selected GIF/PNG pairs may change or be staged. Per-branch concurrency serializes bot writers; a fresh remote-HEAD check precedes a non-force bot push. Failed verification prevents commits. The bot uses GITHUB_TOKEN, whose pushes do not trigger another workflow run; only the selected image pairs can be committed. The bot write step is restricted to the existing feature branch; main has no write step. CI uploads verification metrics and its actual dependency/font inventory for final-tree reconciliation.
+
+Native-size images, decoded phases, loop transition, original-logo comparison, orbit masks and 320/375px previews require visual inspection in addition to numerical checks. Resized previews do not verify a physical device or GitHub's image proxy. PR #2 remains Draft and unmerged until Tools is completed and final approval is given.
+
+## Earlier Languages phases
 
 ### Language-only visual refinement
 
