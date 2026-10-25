@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 
 import cairosvg
-from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageOps
 
 ROOT = Path(__file__).resolve().parents[1]
 W, H = 1200, 960
@@ -173,6 +173,10 @@ def sample_outline(key, originals, extras, count, rng):
     if key == "typescript":
         # Antialias the pixelized TS corners while retaining the recognizable source path.
         alpha = alpha.filter(ImageFilter.GaussianBlur(0.85))
+    # A transparent border is essential before applying MinFilter. Without
+    # it, the sampler cannot detect edges lying exactly on the cropped top
+    # boundary (the missing top horizontal stroke of the CSS3 shield).
+    alpha = ImageOps.expand(alpha, border=6, fill=0)
     edge = ImageChops.subtract(alpha, alpha.filter(ImageFilter.MinFilter(5)))
     w, h = alpha.size
     p = edge.load()
@@ -187,6 +191,23 @@ def sample_outline(key, originals, extras, count, rng):
         height = max(y for _, y in choices) - min(y for _, y in choices)
         if min(width, height) < 44:
             raise ValueError(f"Previously malformed icon still cropped: {key} {width}x{height}")
+    if key == "css":
+        top_y = min(y for _, y in choices)
+        seam = sorted((point for point in choices if point[1] <= top_y + 2),
+                      key=lambda point: point[0])
+        seam_width = max((x for x, _ in seam), default=0) - min(
+            (x for x, _ in seam), default=0
+        )
+        if len(seam) < 30 or seam_width < 65:
+            raise ValueError("CSS top shield edge missing from contour sample")
+        # Reserve evenly spread particles across the horizontal top stroke;
+        # relying on random sampling alone left visible gaps on phones.
+        reserved = min(125, count // 8)
+        fixed_seam = [seam[i * (len(seam) - 1) // (reserved - 1)]
+                      for i in range(reserved)]
+        rng.shuffle(choices)
+        return fixed_seam + [choices[i % len(choices)]
+                             for i in range(count - reserved)]
     rng.shuffle(choices)
     return [choices[i % len(choices)] for i in range(count)]
 
