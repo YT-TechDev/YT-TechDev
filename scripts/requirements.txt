@@ -1,0 +1,2 @@
+Pillow==12.3.0
+CairoSVG==2.8.2

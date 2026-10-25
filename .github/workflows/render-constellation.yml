@@ -1,0 +1,50 @@
+name: Render profile constellation
+
+on:
+  push:
+    branches:
+      - main
+      - feat/profile-particle-constellation-20261025
+    paths:
+      - "scripts/render_constellation.py"
+      - "data/icon-paths.json"
+      - ".github/workflows/render-constellation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install renderer dependencies
+        run: python -m pip install -r scripts/requirements.txt
+      - name: Render animated and static previews
+        run: |
+          python scripts/render_constellation.py --out assets/constellation.gif
+          python scripts/render_constellation.py --static --out assets/constellation.png
+      - name: Verify artwork format
+        run: |
+          python - <<'PY'
+          from PIL import Image
+          gif = Image.open("assets/constellation.gif")
+          png = Image.open("assets/constellation.png")
+          assert gif.size == png.size == (1200, 620)
+          assert gif.n_frames == 28
+          print("Artwork validation passed.")
+          PY
+      - name: Commit regenerated preview assets
+        run: |
+          git add assets/constellation.gif assets/constellation.png
+          if ! git diff --cached --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore(profile): regenerate particle constellation previews"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
