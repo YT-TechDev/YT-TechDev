@@ -76,6 +76,13 @@ def glyph_svg(key: str, originals: dict, extras: dict) -> str:
         return (base + ' viewBox="0 0 240 160">'
                 '<text x="120" y="119" text-anchor="middle" font-family="sans-serif" '
                 'font-size="108" font-weight="bold" fill="white">R3F</text></svg>')
+    if key == "moonbit":
+        # Illustrative lunar / MB mark; this is not the official MoonBit logo.
+        return (base + ' viewBox="0 0 240 160">'
+                '<path d="M94 15 A65 65 0 1 0 145 133 A55 55 0 0 1 94 15Z" '
+                'fill="white"/>'
+                '<text x="159" y="110" text-anchor="middle" font-family="sans-serif" '
+                'font-size="82" font-weight="bold" fill="white">M</text></svg>')
     if key == "webassembly":
         # Compact symbolic WASM hexagon. The upstream glyph had separated
         # elements too small to recognize after GitHub mobile downscaling.
