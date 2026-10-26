@@ -23,6 +23,7 @@ from framework_orbits import (
     EXPANSION_FIXTURE, EXPANSION_SHA256, QuietOrbits, floating_offset,
     global_palette, light_angle, logo_envelope, particle_pulse, prepared_contours,
     REFINEMENT_FIXTURE, REFINEMENT_SHA256, PRESERVED_KEYS, refinement_fixture,
+    POLISH_FIXTURE, POLISH_SHA256, POLISHED_KEYS, polish_fixture,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,11 +33,13 @@ NAMES = ("React", "Next.js", "Node.js", "R3F", "Three.js", "Vue.js",
 KEYS = ("react", "nextjs", "nodejs", "r3f", "threedotjs", "vue", "googleappsscript",
         "tailwindcss", "bootstrap", "framermotion", "jquery", "prisma")
 COLORS = ("#79f1ff", "#f1f3fd", "#a9efb8", "#dcc2ff", "#c6e9f9", "#42b883",
-          "#4285f4", "#80e5ef", "#c9a4ff", "#f3df83", "#7acef4", "#edf3ff")
+          "#4285f4", "#80e5ef", "#c9a4ff", "#fef62a", "#7acef4", "#edf3ff")
 POSITIONS = ((215,191),(600,191),(985,191),(215,431),(600,431),(985,431),
              (215,671),(600,671),(985,671),(215,911),(600,911),(985,911))
 RGB_FIXTURE = ROOT / "scripts/framework_preserved_rgb.json"
 RGB_SHA256 = "a9d550ffa38d680c4ff5e66967f5bc78c9c10d3177338d8a2ed6926748d8fd1d"
+POLISH_RGB_FIXTURE = ROOT / "scripts/framework_polish_preserved_rgb.json"
+POLISH_RGB_SHA256 = "cacce835ecc191e8cc038ddfc534c8d8c697a9e8169b9cd00b89b8a96ff55b4f"
 PROTECTED_BLOBS = {
     "assets/constellation-languages.gif": "9f5a84ddae394f44992215c59a4271e37a932fb4",
     "assets/constellation-languages.png": "50ae288464fd4e9de3db5bc69d3b479ebf88b385",
@@ -121,20 +124,30 @@ def verify_structure(renderer):
     assert sha256(REFINEMENT_FIXTURE) == REFINEMENT_SHA256
     from build_framework_refinement import build
     assert build() == REFINEMENT_FIXTURE.read_bytes(), "Brand source/contour derivation changed"
+    polished = polish_fixture()
+    from build_framework_polish import build as build_polish, STYLES
+    assert sha256(POLISH_FIXTURE) == POLISH_SHA256
+    assert build_polish() == POLISH_FIXTURE.read_bytes(), "Motion source/contour derivation changed"
+    assert renderer.polish_styles == STYLES, "Reviewed local particle style changed"
+    assert set(renderer.polish_styles) == set(POLISHED_KEYS)
     assert all(len(n[-1]) == 1000 for n in nodes), "Missing contour samples"
     for node in nodes:
         key, *_, points = node
-        expected = (refined["points"] if key in refined["points"] else
+        expected = (polished["points"] if key in polished["points"] else
+                    refined["points"] if key in refined["points"] else
                     fixture["points"] if key in ORIGINAL_KEYS else added["points"])
         assert [list(p) for p in points] == expected[key], f"Coordinates changed: {key}"
         assert len(set(points)) >= 180, f"Degenerate symbol: {key}"
         assert all(math.isfinite(v) and abs(v) <= 80 for point in points for v in point)
-        if key not in ORIGINAL_KEYS and key not in refined["points"]:
+        if key not in ORIGINAL_KEYS and key not in refined["points"] and key not in polished["points"]:
             assert added["references"][key].startswith("https://") and added["descriptions"][key]
         if key in refined["points"]:
             assert len(renderer.sample_colors[key]) == 1000
             assert renderer.sample_colors[key] == refined["colors"][key]
-    assert set(renderer.sample_colors) == {"vue", "googleappsscript", "prisma"}
+        if key in polished["points"]:
+            assert renderer.sample_colors[key] == polished["colors"][key]
+    assert set(renderer.sample_colors) == {"vue", "googleappsscript", "prisma", "framermotion"}
+    assert set(renderer.sample_colors["framermotion"]) == {"#fef62a"}
     assert set(renderer.sample_colors["googleappsscript"]) == {"#ea4335", "#fbbc04", "#34a853", "#4285f4", "#ffffff"}
     assert set(renderer.sample_colors["vue"]) == {"#42b883", "#80c7c6"}
 
@@ -154,7 +167,10 @@ def verify_structure(renderer):
          patch.object(ImageDraw.ImageDraw, "line", record_line):
         black = renderer.foreground(Image.new("RGB", SIZE), 0, freeze=True)
     assert [t for _, t, _ in texts][3:] == list(NAMES)
-    assert [t for _, t, _ in texts][:3] == ["YT-TECHDEV   /   SKILL CONSTELLATION", sections.SECTIONS["frameworks"]["title"], "FROM WEB FRAMEWORKS TO WASM EXECUTION"]
+    assert [t for _, t, _ in texts][:3] == ["YT-TECHDEV   /   SKILL CONSTELLATION", "02  /  FRAMEWORKS & RUNTIMES", "FROM UI LIBRARIES TO APPLICATION SYSTEMS"]
+    assert texts[2][0] == (43,95) and texts[2][2]["font"].size == 13
+    assert texts[2][2]["fill"] == (87,138,169)
+    assert ImageDraw.Draw(black).textbbox((43,95), texts[2][1], font=texts[2][2]["font"])[2] < SIZE[0]-43
     assert len(texts) == 15, "Unexpected footer, labels or badges"
     assert not lines, "Frameworks footer rule must be absent"
     assert [key for key, _ in renderer.protection_boxes].count("footer") == 0
@@ -166,7 +182,7 @@ def verify_structure(renderer):
         assert xy == (x, y+LABEL_OFFSET) and options["anchor"] == "mm"
         assert options["font"].size == LABEL_SIZE == 38
         box = draw.textbbox(xy, name, font=options["font"], anchor="mm")
-        gap = box[1] - (y+max(py for _, py in points)+DRIFT[1]+DOT_RADIUS+.5)
+        gap = box[1] - logo_envelope(node)[3]
         assert gap >= 8, f"Logo/name collision: {name}: {gap}"
         gaps.append(gap)
         envelope = logo_envelope(node)
@@ -193,20 +209,52 @@ def verify_structure(renderer):
     assert ImageChops.multiply(renderer.structure.getchannel("A"), renderer.protected).getbbox() is None
     assert sha256(RGB_FIXTURE) == RGB_SHA256, "Preserved RGB baseline changed"
     rgb_fixture = json.loads(RGB_FIXTURE.read_text())
+    # Keep all 45 independent historical RGB checks. Motion's old drawing
+    # is exercised as archived evidence, rather than deleting its coverage.
+    archived = copy.copy(renderer)
+    archived.polish_styles = {}
+    archived.sample_colors = refined["colors"]
+    historical_points = {**fixture["points"], **added["points"], **refined["points"]}
+    archived.nodes = [(*n[:3], "#f3df83" if n[0] == "framermotion" else n[3],
+                       *n[4:-1], historical_points[n[0]]) for n in nodes]
+    historical_rgb = {}
+    for key in rgb_fixture["rgb_sha256"]:
+        hashes = local_rgb_hashes(archived, key, rgb_fixture)
+        assert hashes == rgb_fixture["rgb_sha256"][key], f"Historical source RGB changed: {key}"
+        historical_rgb[key] = hashes
+    assert sha256(POLISH_RGB_FIXTURE) == POLISH_RGB_SHA256, "Current nine-symbol baseline changed"
+    current = json.loads(POLISH_RGB_FIXTURE.read_text())
+    assert current["baseline_commit"] == "652f79a761bf714f6a3553e8cd2667a086b31abc"
+    assert tuple(current["strict_nine"]) == PRESERVED_KEYS
+    assert current["held_for_brand_review"] == ["bootstrap"]
+    assert hashlib.sha256(renderer.background.tobytes()).hexdigest() == current["background_rgb_sha256"], "Static background/stars changed"
     preserved_rgb = {}
-    for key in PRESERVED_KEYS:
-        local = copy.copy(renderer)
-        local.nodes = [(*n[:5], *((200,300) if n[0] == key else (-10000,-10000)), n[-1]) for n in nodes]
-        layers = [local.foreground(Image.new("RGB", SIZE), 0, True)]
-        layers += [local.foreground(Image.new("RGB", SIZE), p) for p in rgb_fixture["phases"]]
-        hashes = [hashlib.sha256(layer.crop(rgb_fixture["crop"]).tobytes()).hexdigest() for layer in layers]
-        assert hashes == rgb_fixture["rgb_sha256"][key], f"Preserved local source RGB changed: {key}"
+    for key in (*PRESERVED_KEYS, "bootstrap"):
+        node = next(n for n in nodes if n[0] == key)
+        point_hash = hashlib.sha256(json.dumps(node[-1],separators=(",",":")).encode()).hexdigest()
+        assert point_hash == current["points_sha256"][key], f"Preserved ordered points changed: {key}"
+        hashes = local_rgb_hashes(renderer, key, current)
+        assert hashes == current["rgb_sha256"][key], f"Preserved local source RGB changed: {key}"
         preserved_rgb[key] = hashes
     return {"inventory": list(NAMES), "positions": list(POSITIONS),
             "minimum_logo_name_gap_px": min(gaps), "logo_masks_sha256": silhouettes,
             "original_fixture_sha256": sha256(FIXTURE), "expansion_fixture_sha256": sha256(EXPANSION_FIXTURE),
-            "refinement_fixture_sha256": sha256(REFINEMENT_FIXTURE), "preserved_local_rgb_sha256": preserved_rgb,
+            "refinement_fixture_sha256": sha256(REFINEMENT_FIXTURE), "polish_fixture_sha256": sha256(POLISH_FIXTURE),
+            "historical_local_rgb_sha256": historical_rgb, "preserved_local_rgb_sha256": preserved_rgb,
+            "strict_nine": list(PRESERVED_KEYS), "bootstrap": "unchanged; brand review hold",
+            "intentional_changes": {"framermotion":"verified three forms and dot; yellow outline",
+                                    "googleappsscript":"same ordered coordinates/colors; local AA only"},
+            "background_rgb_sha256": current["background_rgb_sha256"],
             "foreground_text_calls": len(texts), "foreground_line_calls": len(lines)}
+
+
+def local_rgb_hashes(renderer, key, fixture):
+    nodes = renderer.nodes
+    local = copy.copy(renderer)
+    local.nodes = [(*n[:5], *((200,300) if n[0] == key else (-10000,-10000)), n[-1]) for n in nodes]
+    layers = [local.foreground(Image.new("RGB", SIZE), 0, True)]
+    layers += [local.foreground(Image.new("RGB", SIZE), p) for p in fixture["phases"]]
+    return [hashlib.sha256(layer.crop(fixture["crop"]).tobytes()).hexdigest() for layer in layers]
 
 
 def verify_assets(renderer, assets):
@@ -317,6 +365,26 @@ def verify_negative_controls(renderer):
     bad.sample_colors = {**renderer.sample_colors, "react": ["#ffffff"]*1000}
     reject("preserved source RGB recolored", lambda: verify_structure(bad))
     bad = copy.copy(renderer)
+    bad.polish_styles = copy.deepcopy(renderer.polish_styles)
+    bad.polish_styles["googleappsscript"]["radius"] = .2
+    reject("unreviewed GAS particle radius", lambda: verify_structure(bad))
+    bad = copy.copy(renderer)
+    bad.nodes = list(renderer.nodes)
+    n = list(bad.nodes[9])
+    retained = [p for p in n[-1] if p[0] < 45]
+    n[-1] = [retained[i % len(retained)] for i in range(1000)]
+    bad.nodes[9] = tuple(n)
+    reject("Motion dot component removed", lambda: verify_structure(bad))
+    bad = copy.copy(renderer)
+    bad.nodes = list(renderer.nodes)
+    n = list(bad.nodes[8]); n[-1] = list(n[-1]); n[-1][0] = (0,0)
+    bad.nodes[8] = tuple(n)
+    reject("Bootstrap changed despite brand hold", lambda: verify_structure(bad))
+    bad = copy.copy(renderer)
+    bad.background = renderer.background.copy()
+    bad.background.putpixel((50,50),(255,255,255))
+    reject("unexpected distant-star/background change", lambda: verify_structure(bad))
+    bad = copy.copy(renderer)
     def footer_restored(image, phase, freeze=False):
         image = renderer.foreground(image, phase, freeze)
         ImageDraw.Draw(image).line((43, SIZE[1]-39, 1158, SIZE[1]-39), fill=(29,67,93))
@@ -325,7 +393,8 @@ def verify_negative_controls(renderer):
     reject("Frameworks footer restored", lambda: verify_structure(bad))
     with tempfile.TemporaryDirectory(prefix="contour-negative-") as directory:
         for attr, source in (("FIXTURE", FIXTURE), ("EXPANSION_FIXTURE", EXPANSION_FIXTURE),
-                             ("REFINEMENT_FIXTURE", REFINEMENT_FIXTURE)):
+                             ("REFINEMENT_FIXTURE", REFINEMENT_FIXTURE),
+                             ("POLISH_FIXTURE", POLISH_FIXTURE)):
             tampered = Path(directory)/source.name
             data = json.loads(source.read_text())
             key = next(iter(data["points"]))

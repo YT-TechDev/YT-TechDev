@@ -13,9 +13,12 @@ on:
       - "scripts/framework_contours.json"
       - "scripts/framework_expansion_contours.json"
       - "scripts/framework_refinement_contours.json"
+      - "scripts/framework_polish_contours.json"
+      - "scripts/framework_polish_preserved_rgb.json"
       - "scripts/framework_preserved_rgb.json"
       - "scripts/framework_brand_sources/**"
       - "scripts/build_framework_refinement.py"
+      - "scripts/build_framework_polish.py"
       - "scripts/verify_frameworks.py"
       - "scripts/requirements.txt"
       - "assets/constellation-*.gif"
@@ -73,7 +76,7 @@ jobs:
               if not before or set(before) == {'0'}:
                   before = 'HEAD^'
               changed = set(subprocess.check_output(['git','diff','--name-only',before,'HEAD'],text=True).splitlines())
-              frameworks = bool(changed & {'scripts/framework_orbits.py','scripts/framework_contours.json','scripts/framework_expansion_contours.json','scripts/framework_refinement_contours.json','scripts/framework_preserved_rgb.json','scripts/build_framework_refinement.py','scripts/verify_frameworks.py'})
+              frameworks = bool(changed & {'scripts/framework_orbits.py','scripts/framework_contours.json','scripts/framework_expansion_contours.json','scripts/framework_refinement_contours.json','scripts/framework_preserved_rgb.json','scripts/framework_polish_contours.json','scripts/framework_polish_preserved_rgb.json','scripts/build_framework_refinement.py','scripts/build_framework_polish.py','scripts/verify_frameworks.py'})
               frameworks |= any(p.startswith('scripts/framework_brand_sources/') for p in changed)
               frameworks |= any(p.startswith('assets/constellation-frameworks.') for p in changed)
               languages = bool(changed & {'scripts/verify_languages.py','assets/moonbit-official.png'})
@@ -108,7 +111,7 @@ jobs:
         run: python scripts/render_sections.py --only languages
       - name: Verify Languages and preserved artwork
         run: |
-          python -m py_compile scripts/render_constellation.py scripts/render_sections.py scripts/verify_languages.py scripts/framework_orbits.py scripts/build_framework_refinement.py scripts/verify_frameworks.py
+          python -m py_compile scripts/render_constellation.py scripts/render_sections.py scripts/verify_languages.py scripts/framework_orbits.py scripts/build_framework_refinement.py scripts/build_framework_polish.py scripts/verify_frameworks.py
           python scripts/verify_languages.py
           if [ -f "$RUNNER_TEMP/constellation-preserved.sha256" ]; then
             sha256sum --check "$RUNNER_TEMP/constellation-preserved.sha256"

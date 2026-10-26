@@ -51,7 +51,7 @@ SECTIONS = {
     },
     "frameworks": {
         "title": "02  /  FRAMEWORKS & RUNTIMES",
-        "subtitle": "FROM WEB FRAMEWORKS TO WASM EXECUTION",
+        "subtitle": "FROM UI LIBRARIES TO APPLICATION SYSTEMS",
         "height": 1110,
         "rows": (191, 431, 671, 911),
         "positions": ((215,191),(600,191),(985,191),
@@ -68,7 +68,7 @@ SECTIONS = {
             ("googleappsscript", "Google Apps Script", "used", "#4285f4", None),
             ("tailwindcss", "TailwindCSS", "used", "#80e5ef", None),
             ("bootstrap", "Bootstrap", "used", "#c9a4ff", None),
-            ("framermotion", "Framer Motion", "used", "#f3df83", None),
+            ("framermotion", "Framer Motion", "used", "#fef62a", None),
             ("jquery", "jQuery", "used", "#7acef4", None),
             ("prisma", "Prisma", "used", "#edf3ff", None),
         ],

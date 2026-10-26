@@ -7,6 +7,7 @@ system FreeType changing the approved particle silhouettes on regeneration.
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import math
 import random
@@ -37,8 +38,24 @@ EXPANSION_FIXTURE = Path(__file__).with_name("framework_expansion_contours.json"
 EXPANSION_SHA256 = "b2e27c86ba99bb4c0946c4e1d7d3c522b00774d19faeaada8b25291969b99670"
 REFINEMENT_FIXTURE = Path(__file__).with_name("framework_refinement_contours.json")
 REFINEMENT_SHA256 = "a283c2615f578f9c6460f0d58af43d99e85c91c95ce95dcec8c07b62d6079701"
+POLISH_FIXTURE = Path(__file__).with_name("framework_polish_contours.json")
+POLISH_SHA256 = "4dc725dc2fb0743379188bc3492605db0bbb44eaf5ce0c4346e7546603fa2d48"
+POLISHED_KEYS = ("framermotion", "googleappsscript")
 PRESERVED_KEYS = ("react", "nextjs", "nodejs", "r3f", "threedotjs",
-                  "tailwindcss", "bootstrap", "framermotion", "jquery")
+                  "vue", "tailwindcss", "jquery", "prisma")
+
+
+def polish_fixture():
+    content = POLISH_FIXTURE.read_bytes()
+    if hashlib.sha256(content).hexdigest() != POLISH_SHA256:
+        raise ValueError("Reviewed visual polish fixture changed")
+    data = json.loads(content)
+    if data["version"] != 1 or set(data["points"]) != {"framermotion"}:
+        raise ValueError("Invalid visual polish fixture")
+    for source in data["sources"].values():
+        if hashlib.sha256((POLISH_FIXTURE.parent/source["file"]).read_bytes()).hexdigest() != source["sha256"]:
+            raise ValueError("Reviewed Motion reference changed")
+    return data
 
 
 def refinement_fixture():
@@ -76,7 +93,8 @@ def prepared_contours(cfg, columns, sources):
     # Archived WASM/Spring/crate/GAS remain reproducible in the old fixtures.
     # Only cfg['icons'] selects active marks; the new GAS explicitly overrides
     # its historical source-file illustration without rewriting that evidence.
-    points = {**frozen["points"], **added["points"], **refinement_fixture()["points"]}
+    points = {**frozen["points"], **added["points"], **refinement_fixture()["points"],
+              **polish_fixture()["points"]}
     positions = cfg["positions"]
     if len(positions) != len(cfg["icons"]):
         raise ValueError("Missing Frameworks positions")
@@ -106,38 +124,53 @@ def light_angle(index, phase):
     return LIGHT_STARTS[index] + LIGHT_ARCS[index] * math.sin(phase + index * .7)
 
 
-def logo_envelope(node, padding=0):
+def logo_envelope(node, padding=0, *, legacy=False):
     """Continuous full drift, rounded pixel centers, and emphasized dot radius."""
-    *_, x, y, points = node
-    padx, pady = DRIFT[0] + DOT_RADIUS + .5 + padding, DRIFT[1] + DOT_RADIUS + .5 + padding
+    key, *_, x, y, points = node
+    # Local 3x AA has a 3px Lanczos footprint in addition to a 1.25px
+    # accent radius. Five pixels conservatively contain its complete support.
+    radius = 5 if key in POLISHED_KEYS and not legacy else DOT_RADIUS
+    padx, pady = DRIFT[0] + radius + .5 + padding, DRIFT[1] + radius + .5 + padding
     return (math.floor(x + min(px for px, _ in points) - padx),
             math.floor(y + min(py for _, py in points) - pady),
             math.ceil(x + max(px for px, _ in points) + padx),
             math.ceil(y + max(py for _, py in points) + pady))
 
 
+def fixed_protection(nodes, font, *, legacy=False):
+    protected = Image.new("L", SIZE)
+    draw = ImageDraw.Draw(protected)
+    boxes = [("header", (0, 0, SIZE[0]-1, 113))]
+    for node in nodes:
+        key, label, _, _, _, x, y, _ = node
+        boxes.append((key, logo_envelope(node, padding=3, legacy=legacy)))
+        box = draw.textbbox((x, y + LABEL_OFFSET), label,
+                           font=font(LABEL_SIZE, True), anchor="mm")
+        boxes.append((label, (box[0]-8, box[1]-6, box[2]+8, box[3]+6)))
+    for _, box in boxes:
+        draw.rectangle(box, fill=255)
+    soft = protected.filter(ImageFilter.MaxFilter(9)).filter(ImageFilter.GaussianBlur(3))
+    return boxes, protected, ImageChops.invert(ImageChops.lighter(protected, soft))
+
+
 class QuietOrbits:
     def __init__(self, cfg, nodes, font, brightness):
         self.cfg, self.nodes = cfg, nodes
         self.font, self.brightness = font, brightness
-        self.sample_colors = refinement_fixture()["colors"]
-        self.protected = Image.new("L", SIZE)
-        draw = ImageDraw.Draw(self.protected)
+        polish = polish_fixture()
+        self.sample_colors = {**refinement_fixture()["colors"], **polish["colors"]}
+        self.polish_styles = polish["styles"]
         # All clipping/masking occurs AFTER orbital glow and AA, so zero is exact.
-        self.protection_boxes = [("header", (0, 0, SIZE[0]-1, 113))]
-        for node in nodes:
-            key, label, _, _, _, x, y, _ = node
-            self.protection_boxes.append((key, logo_envelope(node, padding=3)))
-            box = draw.textbbox((x, y + LABEL_OFFSET), label,
-                                font=font(LABEL_SIZE, True), anchor="mm")
-            self.protection_boxes.append((label, (box[0]-8, box[1]-6, box[2]+8, box[3]+6)))
-        for _, box in self.protection_boxes:
-            draw.rectangle(box, fill=255)
+        self.protection_boxes, self.protected, self.keep = fixed_protection(nodes, font)
         # A fixed outer falloff prevents sharp rectangular ends without moving
         # the zero-alpha core as icons float. No frame-dependent mask exists.
-        soft = self.protected.filter(ImageFilter.MaxFilter(9)).filter(ImageFilter.GaussianBlur(3))
-        exclusion = ImageChops.lighter(self.protected, soft)
-        self.keep = ImageChops.invert(exclusion)
+        # Star attenuation is frozen to the pre-polish geometry. Enlarging an
+        # orbital exclusion core must not brighten/dim any distant star.
+        historical = {**json.loads(FIXTURE.read_bytes())["points"],
+                      **json.loads(EXPANSION_FIXTURE.read_bytes())["points"],
+                      **refinement_fixture()["points"]}
+        historical_nodes = [(*n[:-1], historical[n[0]]) for n in nodes]
+        _, _, self.background_keep = fixed_protection(historical_nodes, font, legacy=True)
         self.background = self.make_background()
         self.structure = self.make_structure()
         self.base = Image.alpha_composite(self.background.convert("RGBA"), self.structure)
@@ -160,7 +193,7 @@ class QuietOrbits:
                 pixels[x, y] = (int(4+3*light+3*violet), int(10+7*light),
                                 int(24+14*light+5*violet))
         rng, draw = random.Random(SEED), ImageDraw.Draw(image)
-        mask = self.keep.load()
+        mask = self.background_keep.load()
         for count, lo, hi in ((290, 20, 57), (39, 68, 109)):
             for _ in range(count):
                 x, y = rng.randrange(width), rng.randrange(height)
@@ -212,6 +245,11 @@ class QuietOrbits:
         for i, (key, label, activity, color, _, x0, y0, points) in enumerate(self.nodes):
             dx, dy = (0, 0) if freeze else floating_offset(i, phase)
             rgb = tuple(int(color[j:j+2], 16) for j in (1, 3, 5))
+            if key in self.polish_styles:
+                self.polished_particles(image, self.nodes[i], i, phase, freeze)
+                draw.text((x0, y0+LABEL_OFFSET), label, anchor="mm",
+                          font=font(LABEL_SIZE, True), fill=(207, 228, 245))
+                continue
             for n, (px, py) in enumerate(points):
                 pulse = 1 if freeze else particle_pulse(i, n, phase)
                 sample_color = self.sample_colors.get(key)
@@ -225,6 +263,25 @@ class QuietOrbits:
             draw.text((x0, y0+LABEL_OFFSET), label, anchor="mm",
                       font=font(LABEL_SIZE, True), fill=(207, 228, 245))
         return image
+
+    def polished_particles(self, image, node, index, phase, freeze):
+        key, _, activity, color, _, x0, y0, points = node
+        style = self.polish_styles[key]
+        scale = style["scale"]
+        layer = Image.new("RGBA", (180*scale, 180*scale))
+        draw = ImageDraw.Draw(layer)
+        dx, dy = (0, 0) if freeze else floating_offset(index, phase)
+        colors = self.sample_colors.get(key, [color]*len(points))
+        for n, (px, py) in enumerate(points):
+            pulse = 1 if freeze else particle_pulse(index, n, phase)
+            ink = tuple(round(int(colors[n][j:j+2], 16)*self.brightness[activity]*pulse)
+                        for j in (1, 3, 5))
+            radius = style["accent_radius"] if n % style["accent_stride"] == 0 else style["radius"]
+            x, y = (90+dx+px)*scale, (90+dy+py)*scale
+            draw.ellipse((x-radius*scale, y-radius*scale, x+radius*scale, y+radius*scale),
+                         fill=(*ink, 255))
+        layer = layer.resize((180, 180), Image.Resampling.LANCZOS)
+        image.paste(layer, (x0-90, y0-90), layer)
 
     def render(self, phase, *, freeze=False):
         image = Image.alpha_composite(self.base, self.light_layer(phase)).convert("RGB")
@@ -262,11 +319,23 @@ def render_assets(renderer, destination, frames=FRAMES):
     png = destination / "constellation-frameworks.png"
     gif = destination / "constellation-frameworks.gif"
     # Neutral, undrifted/unpulsed poster; orbital light is at phase zero.
-    renderer.render(0, freeze=True).save(png, optimize=True)
+    # Validate a complete in-memory PNG before replacing the visible file.
+    # This also prevents readers from observing partial IDAT chunks during a
+    # slow direct encoder write. The encoded format/optimization is unchanged.
+    encoded = io.BytesIO()
+    renderer.render(0, freeze=True).save(encoded, format="PNG", optimize=True)
+    png_bytes = encoded.getvalue()
+    with Image.open(io.BytesIO(png_bytes)) as check:
+        check.verify()
+    temporary = png.with_suffix(".png.tmp")
+    temporary.write_bytes(png_bytes)
+    temporary.replace(png)
     animation = [renderer.render(math.tau*n/frames) for n in range(frames)]
     palette = global_palette(animation)
     indexed = [frame.quantize(palette=palette, dither=Image.Dither.NONE) for frame in animation]
     indexed[0].save(gif, save_all=True, append_images=indexed[1:],
                     duration=DURATION_MS, loop=0, disposal=1, optimize=True)
+    if png.read_bytes() != png_bytes:
+        raise ValueError("Completed Frameworks PNG changed during GIF generation")
     print(f"frameworks: {len(renderer.nodes)} nodes; GIF {gif.stat().st_size:,} bytes; "
           f"PNG {png.stat().st_size:,} bytes; {frames} x {DURATION_MS}ms")
