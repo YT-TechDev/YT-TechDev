@@ -10,7 +10,7 @@ The previous 20-node poster was difficult to read on phones, especially the bott
 - **Frameworks & Runtimes (12):** React, Next.js, Node.js, R3F, Three.js, Vue.js, Google Apps Script, TailwindCSS, Bootstrap, Framer Motion, jQuery, Prisma
 - **Tools & Platforms (9):** PostgreSQL, Docker, Git, Cloudflare, Linux, VS Code, Blender, ChatGPT, Claude
 
-Frameworks now uses **Quiet Orbits / Structure**, with two shared elliptical paths behind **eleven outline-particle symbols and one unchanged official Bootstrap logo**. Tools retains its original three-column layout and awaits its Space Station / Observatory design phase. The completed Languages image is a distinct 5-column × 2-row, 1600×780 layout, arranged for left-to-right frontend → backend reading. It displays only particle icons and language names, without secondary status labels or connector lines. Brightness is intentionally high across all groups and conveys **no proficiency ranking**. Internal activity metadata is retained: MoonBit is used in [Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow), based on the public MoonBit/WebAssembly runtime implementation; C++ and Rust remain Exploring. ChatGPT/Claude are explicitly AI tools, not programming languages.
+Frameworks now uses **Quiet Orbits / Structure**, with two shared elliptical paths behind **twelve outline-particle symbols**. Tools retains its original three-column layout and awaits its Space Station / Observatory design phase. The completed Languages image is a distinct 5-column × 2-row, 1600×780 layout, arranged for left-to-right frontend → backend reading. It displays only particle icons and language names, without secondary status labels or connector lines. Brightness is intentionally high across all groups and conveys **no proficiency ranking**. Internal activity metadata is retained: MoonBit is used in [Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow), based on the public MoonBit/WebAssembly runtime implementation; C++ and Rust remain Exploring. ChatGPT/Claude are explicitly AI tools, not programming languages.
 
 ## Sources
 
@@ -43,7 +43,43 @@ Frozen Languages verification uses CairoSVG and system fonts/FreeType in additio
 
 Do not merge before visual approval. No changes to public profile main until the PR is merged.
 
-## Official Bootstrap integration (October 26, 2026)
+## Bootstrap outline-particle revision
+
+The user's subsequent design instruction replaces the solid official Bootstrap
+mark with an **unofficial outline-particle adaptation of the same shape**. All
+twelve technology symbols now use particles. The official reference SVG and its
+lossless PNG remain unchanged as provenance and historical evidence; the PNG
+is no longer composited into the active artwork.
+
+`build_bootstrap_outline.py` extracts the two exact SVG path geometries into
+neutral contour masks: the brace-shaped outer silhouette and the B, including
+both counters. It freezes 1,000 ordered samples in `bootstrap_outline_contours.json`.
+The outer contour uses light violet `#c9a4ff`; B uses pale violet `#ede4ff` for
+contrast on navy. There is no solid fill, gradient or shadow in this adaptation.
+The 128×102 design region and anchor (985,671) are preserved. It uses the same
+3× antialiased particle radii as Motion/Apps Script and the existing shared
+floating/pulse functions, including Bootstrap's original index-eight phase.
+Orbital protection contains its full animation and antialiasing support.
+The deterministic GIF palette retains 224 composition colors and reserves 32
+colors from Bootstrap's actual five-phase particle samples to preserve sparse
+violet edges. All frames still share one 256-color table without dithering;
+the existing foreground error limit and stricter Bootstrap error check remain.
+
+All eleven other symbols retain their exact contours, colors and animation.
+The frozen RGB preservation fixtures and all historical contour fixtures stay
+unchanged. Verification now checks the derived Bootstrap fixture, actual particle
+layer, absence of solid fill, floating animation, GIF fidelity and rejection of
+both the solid raster and old standalone particle B. Timing, subtitle, labels,
+background, orbits, Languages and Tools retain their previous contracts.
+
+This requested adaptation is not an unchanged official logo. The upstream
+guidance prohibits logo modification; no brand-owner approval or guideline
+compliance is claimed for the particle adaptation. Provenance and prior usage
+assessment remain recorded below, applying to their respective historical output.
+
+## Historical official Bootstrap integration (October 26, 2026)
+
+The solid-logo rendering contract below is superseded by the outline-particle revision above.
 
 Bootstrap is the sole exception to the particle rendering contract. The unchanged
 primary SVG referenced by the [official Bootstrap 5.3 brand documentation](https://getbootstrap.com/docs/5.3/about/brand/)

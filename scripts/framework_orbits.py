@@ -52,14 +52,27 @@ BOOTSTRAP_SIZE = (128, 102)  # Exactly 1/4 of the official 512 x 408 canvas.
 BOOTSTRAP_CLEAR_SPACE = 12  # Local layout allowance, not an upstream rule.
 BOOTSTRAP_VERSION = "v5.3.8"
 BOOTSTRAP_COMMIT = "25aa8cc0b32f0d1a54be575347e6d84b70b1acd7"
+BOOTSTRAP_OUTLINE = Path(__file__).with_name("bootstrap_outline_contours.json")
+BOOTSTRAP_OUTLINE_SHA256 = "4fb2dcc4f5ac36791e5d7a103709c0caf9b170164d72d4ebf2b93c1657731185"
+
+
+def bootstrap_fixture():
+    content = BOOTSTRAP_OUTLINE.read_bytes()
+    if hashlib.sha256(content).hexdigest() != BOOTSTRAP_OUTLINE_SHA256:
+        raise ValueError("Reviewed Bootstrap particle contours changed")
+    data = json.loads(content)
+    if data["version"] != 1 or len(data["points"]) != 1000 or len(data["colors"]) != 1000:
+        raise ValueError("Invalid Bootstrap particle fixture")
+    if hashlib.sha256(BOOTSTRAP_SVG.read_bytes()).hexdigest() != data["source"]["sha256"]:
+        raise ValueError("Bootstrap contour reference changed")
+    return data
 
 
 def official_bootstrap():
     """Verified unchanged SVG plus its faithful, filter-aware lossless raster.
 
-    Inkscape renders the SVG's original shadow/filter once, offline. Production
-    uses the pinned RGBA result to avoid CairoSVG's unsupported filter primitives
-    and platform-dependent rasterization. No recoloring, pulse or glow is added.
+    Retained as historical evidence. Active rendering uses bootstrap_fixture();
+    this raster is not composited into the current particle composition.
     """
     for path, digest in ((BOOTSTRAP_SVG, BOOTSTRAP_SVG_SHA256),
                          (BOOTSTRAP_PNG, BOOTSTRAP_PNG_SHA256)):
@@ -124,7 +137,7 @@ def prepared_contours(cfg, columns, sources):
     # Only cfg['icons'] selects active marks; the new GAS explicitly overrides
     # its historical source-file illustration without rewriting that evidence.
     points = {**frozen["points"], **added["points"], **refinement_fixture()["points"],
-              **polish_fixture()["points"]}
+              **polish_fixture()["points"], "bootstrap": bootstrap_fixture()["points"]}
     positions = cfg["positions"]
     if len(positions) != len(cfg["icons"]):
         raise ValueError("Missing Frameworks positions")
@@ -157,13 +170,9 @@ def light_angle(index, phase):
 def logo_envelope(node, padding=0, *, legacy=False):
     """Continuous full drift, rounded pixel centers, and emphasized dot radius."""
     key, *_, x, y, points = node
-    if key == "bootstrap" and not legacy:
-        width, height = BOOTSTRAP_SIZE
-        return (x-width//2-padding, y-height//2-padding,
-                x+width//2-1+padding, y+height//2-1+padding)
     # Local 3x AA has a 3px Lanczos footprint in addition to a 1.25px
     # accent radius. Five pixels conservatively contain its complete support.
-    radius = 5 if key in POLISHED_KEYS and not legacy else DOT_RADIUS
+    radius = 5 if key in (*POLISHED_KEYS, "bootstrap") and not legacy else DOT_RADIUS
     padx, pady = DRIFT[0] + radius + .5 + padding, DRIFT[1] + radius + .5 + padding
     return (math.floor(x + min(px for px, _ in points) - padx),
             math.floor(y + min(py for _, py in points) - pady),
@@ -193,9 +202,12 @@ class QuietOrbits:
         self.cfg, self.nodes = cfg, nodes
         self.font, self.brightness = font, brightness
         self.bootstrap_image = official_bootstrap()
-        self.bootstrap_mode = "official-svg-raster"
+        self.bootstrap_mode = "outline-particles"
+        bootstrap = bootstrap_fixture()
+        self.bootstrap_style = bootstrap["style"]
         polish = polish_fixture()
-        self.sample_colors = {**refinement_fixture()["colors"], **polish["colors"]}
+        self.sample_colors = {**refinement_fixture()["colors"], **polish["colors"],
+                              "bootstrap": bootstrap["colors"]}
         self.polish_styles = polish["styles"]
         # All clipping/masking occurs AFTER orbital glow and AA, so zero is exact.
         self.protection_boxes, self.protected, self.keep = fixed_protection(nodes, font)
@@ -282,8 +294,14 @@ class QuietOrbits:
         for i, (key, label, activity, color, _, x0, y0, points) in enumerate(self.nodes):
             dx, dy = (0, 0) if freeze else floating_offset(i, phase)
             rgb = tuple(int(color[j:j+2], 16) for j in (1, 3, 5))
+            if key == "bootstrap" and self.bootstrap_mode == "outline-particles":
+                self.polished_particles(image, self.nodes[i], i, phase, freeze,
+                                        style=self.bootstrap_style)
+                draw.text((x0, y0+LABEL_OFFSET), label, anchor="mm",
+                          font=font(LABEL_SIZE, True), fill=(207, 228, 245))
+                continue
             if key == "bootstrap" and self.bootstrap_mode == "official-svg-raster":
-                # Static whole mark. Historical B samples remain archival only.
+                # Archived renderer, exercised only by regression controls.
                 width, height = self.bootstrap_image.size
                 image.paste(self.bootstrap_image, (x0-width//2, y0-height//2), self.bootstrap_image)
                 draw.text((x0, y0+LABEL_OFFSET), label, anchor="mm",
@@ -297,6 +315,8 @@ class QuietOrbits:
             for n, (px, py) in enumerate(points):
                 pulse = 1 if freeze else particle_pulse(i, n, phase)
                 sample_color = self.sample_colors.get(key)
+                if key == "bootstrap" and self.bootstrap_mode == "historical-particles":
+                    sample_color = None
                 source_rgb = (tuple(int(sample_color[n][j:j+2], 16) for j in (1, 3, 5))
                               if sample_color is not None else rgb)
                 ink = tuple(min(255, round(c*self.brightness[activity]*pulse)) for c in source_rgb)
@@ -308,9 +328,9 @@ class QuietOrbits:
                       font=font(LABEL_SIZE, True), fill=(207, 228, 245))
         return image
 
-    def polished_particles(self, image, node, index, phase, freeze):
+    def polished_particles(self, image, node, index, phase, freeze, *, style=None):
         key, _, activity, color, _, x0, y0, points = node
-        style = self.polish_styles[key]
+        style = self.polish_styles[key] if style is None else style
         scale = style["scale"]
         layer = Image.new("RGBA", (180*scale, 180*scale))
         draw = ImageDraw.Draw(layer)
@@ -353,9 +373,23 @@ class QuietOrbits:
 
 def global_palette(frames):
     sheet = Image.new("RGB", (SIZE[0], SIZE[1]*5))
+    bootstrap_ink = []
     for i, fraction in enumerate((0, .2, .4, .6, .8)):
-        sheet.paste(frames[int(len(frames)*fraction)], (0, i*SIZE[1]))
-    return sheet.quantize(colors=256, method=Image.Quantize.MEDIANCUT)
+        frame = frames[int(len(frames)*fraction)]
+        sheet.paste(frame, (0, i*SIZE[1]))
+        crop = frame.crop((910,605,1060,735))
+        bootstrap_ink.extend(rgb for rgb, value in zip(crop.getdata(),crop.convert("L").getdata()) if value > 60)
+    # Sparse violet edges otherwise lose their hue to the much larger navy and
+    # text regions. Reserve 32 colors from their actual five-phase RGB samples;
+    # retain one deterministic, shared palette and no dithering for every frame.
+    palette = sheet.quantize(colors=224, method=Image.Quantize.MEDIANCUT)
+    if not bootstrap_ink:
+        raise ValueError("Bootstrap particle ink missing from palette samples")
+    strip = Image.new("RGB", (len(bootstrap_ink),1))
+    strip.putdata(bootstrap_ink)
+    priority = strip.quantize(colors=32, method=Image.Quantize.MEDIANCUT)
+    palette.putpalette(palette.getpalette()[:224*3] + priority.getpalette()[:32*3])
+    return palette
 
 
 def render_assets(renderer, destination, frames=FRAMES):

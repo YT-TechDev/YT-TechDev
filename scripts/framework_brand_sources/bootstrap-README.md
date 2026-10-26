@@ -3,6 +3,17 @@
 This mark identifies Bootstrap in the developer's technology inventory. It is
 not the developer's own brand and does not imply affiliation or endorsement.
 
+## Current profile rendering
+
+The subsequent user instruction replaces the solid mark with an unofficial
+outline-particle adaptation of the same outer shape and B. The active renderer
+uses `../bootstrap_outline_contours.json`, derived by `../build_bootstrap_outline.py`
+from this unchanged reference SVG. It uses light violet outer particles and a
+pale B, with shared particle antialiasing, floating and pulse. It does not paste
+the solid PNG. Original files and the derivation below remain historical evidence.
+The adaptation is not an unmodified official logo; upstream guidance prohibits
+modification, and brand-owner approval or guideline compliance is not claimed.
+
 ## Provenance
 
 - Guidelines: https://getbootstrap.com/docs/5.3/about/brand/
@@ -24,7 +35,7 @@ user-space gradients remain: purple `#9013fe` → `#6610f2`, and white `#fff` �
 intrinsic 512×408 aspect ratio is exactly preserved at 128×102 (1/4 scale).
 No Bootstrap Icons glyph or redrawn B is used.
 
-## Lossless raster derivation
+## Historical lossless raster derivation
 
 Export environment: Inkscape **1.2.2 (b0a8486541, 2022-12-01)**, then Pillow
 **12.3.0** to normalize the PNG container without changing RGBA pixels:
@@ -52,7 +63,7 @@ effects, particles or individual-component animations. A 12px exclusion region
 keeps the orbits and lights separate. This is a local design allowance; the
 referenced guidelines do not specify a numeric minimum size or clear space.
 
-## Usage assessment and attribution
+## Historical unchanged-logo usage assessment and attribution
 
 The official guidelines request the logo when referencing Bootstrap, prohibit
 modification, prohibit using Bootstrap branding for one's own projects, and
