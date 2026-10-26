@@ -23,6 +23,13 @@ on:
       - "scripts/build_framework_refinement.py"
       - "scripts/build_framework_polish.py"
       - "scripts/verify_frameworks.py"
+      - "scripts/tools_observatory.py"
+      - "scripts/tools_particles.json"
+      - "scripts/tools_station_reference.png"
+      - "scripts/tools_fonts/**"
+      - "scripts/verify_tools.py"
+      - "scripts/section_guard.py"
+      - "scripts/test_section_guard.py"
       - "scripts/requirements.txt"
       - "assets/constellation-*.gif"
       - "assets/constellation-*.png"
@@ -36,7 +43,7 @@ on:
         description: "Authorized section to regenerate (the other artwork is frozen)"
         type: choice
         default: frameworks
-        options: [frameworks, languages, both]
+        options: [frameworks, languages, tools, both]
 
 permissions:
   contents: read
@@ -67,82 +74,44 @@ jobs:
         env:
           REQUESTED: ${{ inputs.section }}
           BEFORE: ${{ github.event.before }}
-        run: |
-          python - <<'PY'
-          import os, subprocess
-          requested = os.environ.get('REQUESTED')
-          if requested:
-              assert requested in ('languages', 'frameworks', 'both')
-              selected = requested
-          else:
-              before = os.environ.get('BEFORE', '')
-              if not before or set(before) == {'0'}:
-                  before = 'HEAD^'
-              changed = set(subprocess.check_output(['git','diff','--name-only',before,'HEAD'],text=True).splitlines())
-              frameworks = bool(changed & {'scripts/framework_orbits.py','scripts/framework_contours.json','scripts/framework_expansion_contours.json','scripts/framework_refinement_contours.json','scripts/framework_preserved_rgb.json','scripts/framework_polish_contours.json','scripts/framework_polish_preserved_rgb.json','scripts/build_framework_refinement.py','scripts/build_framework_polish.py','scripts/verify_frameworks.py'})
-              frameworks |= 'scripts/framework_bootstrap_preserved_rgb.json' in changed
-              frameworks |= bool(changed & {'scripts/bootstrap_outline_contours.json','scripts/build_bootstrap_outline.py'})
-              frameworks |= any(p.startswith('scripts/framework_brand_sources/') for p in changed)
-              frameworks |= any(p.startswith('assets/constellation-frameworks.') for p in changed)
-              languages = bool(changed & {'scripts/verify_languages.py','assets/moonbit-official.png'})
-              languages |= any(p.startswith('assets/constellation-languages.') for p in changed)
-              # A generic renderer-only push retains the existing Languages path.
-              # Mixed shared changes still have to pass BOTH content verifiers;
-              # an ambiguous change fails closed until an explicit dispatch.
-              shared = bool(changed & {'scripts/render_sections.py','scripts/render_constellation.py','data/icon-paths.json','data/supplemental-icons.json'})
-              selected = 'both' if languages and frameworks else ('frameworks' if frameworks else ('languages' if languages or shared else 'frameworks'))
-          with open(os.environ['GITHUB_OUTPUT'],'a') as output:
-              output.write(f'section={selected}\n')
-          print('Regenerating:', selected)
-          PY
-      - name: Record complete protected file guard
+        run: python scripts/section_guard.py select --before "$BEFORE" --requested "$REQUESTED"
+      - name: Record complete section-aware write and staging guard
         env:
           SECTION: ${{ steps.selection.outputs.section }}
-        run: |
-          python - <<'PY'
-          import hashlib, json, os, subprocess
-          selected = ('languages','frameworks') if os.environ['SECTION']=='both' else (os.environ['SECTION'],)
-          allowed = {f'assets/constellation-{s}.{ext}' for s in selected for ext in ('gif','png')}
-          paths = subprocess.check_output(['git','ls-files'],text=True).splitlines()
-          guard = {p:hashlib.sha256(open(p,'rb').read()).hexdigest() for p in paths if p not in allowed}
-          with open(os.environ['RUNNER_TEMP']+'/constellation-guard.json','w') as output:
-              json.dump({'allowed':sorted(allowed),'sha256':guard},output)
-          PY
-      - name: Record preserved artwork checksums for Languages
-        if: steps.selection.outputs.section != 'frameworks'
-        run: sha256sum assets/constellation-{frameworks,tools}.{gif,png} assets/moonbit-official.png > "$RUNNER_TEMP/constellation-preserved.sha256"
+        run: python scripts/section_guard.py snapshot --section "$SECTION" --guard "$RUNNER_TEMP/constellation-guard.json"
       - name: Render Languages and Markup only
-        if: steps.selection.outputs.section != 'frameworks'
+        if: steps.selection.outputs.section == 'languages' || steps.selection.outputs.section == 'both'
         run: python scripts/render_sections.py --only languages
-      - name: Verify Languages and preserved artwork
+      - name: Verify Languages content without rewriting frozen assets
         run: |
-          python -m py_compile scripts/render_constellation.py scripts/render_sections.py scripts/verify_languages.py scripts/framework_orbits.py scripts/build_framework_refinement.py scripts/build_framework_polish.py scripts/build_bootstrap_outline.py scripts/verify_frameworks.py
+          python -m py_compile scripts/*.py
           python scripts/verify_languages.py
-          if [ -f "$RUNNER_TEMP/constellation-preserved.sha256" ]; then
-            sha256sum --check "$RUNNER_TEMP/constellation-preserved.sha256"
-          fi
+          python -m unittest discover -s scripts -p test_section_guard.py
       - name: Render Frameworks only
-        if: steps.selection.outputs.section != 'languages'
+        if: steps.selection.outputs.section == 'frameworks' || steps.selection.outputs.section == 'both'
         run: python scripts/render_sections.py --only frameworks
-      - name: Verify Frameworks content and canonical determinism
+      - name: Verify Frameworks content
         env:
           SECTION: ${{ steps.selection.outputs.section }}
         run: |
           extra=()
-          if [ "$SECTION" = frameworks ]; then extra+=(--protected); fi
-          python scripts/verify_frameworks.py --determinism "${extra[@]}" --report "$RUNNER_TEMP/frameworks-verification.json"
-      - name: Verify all unselected tracked files and changed-file scope
+          if [ "$SECTION" = frameworks ] || [ "$SECTION" = both ]; then extra+=(--determinism); fi
+          # Historical --protected pins the old Tools pair; the section-aware
+          # guard now owns cross-section writes. The content verifier is unchanged.
+          python scripts/verify_frameworks.py "${extra[@]}" --report "$RUNNER_TEMP/frameworks-verification.json"
+      - name: Render Tools only
+        if: steps.selection.outputs.section == 'tools'
+        run: python scripts/render_sections.py --only tools
+      - name: Verify Tools content and selected canonical determinism
+        env:
+          SECTION: ${{ steps.selection.outputs.section }}
         run: |
-          python - <<'PY'
-          import hashlib, json, os, subprocess
-          guard = json.load(open(os.environ['RUNNER_TEMP']+'/constellation-guard.json'))
-          for path, expected in guard['sha256'].items():
-              assert hashlib.sha256(open(path,'rb').read()).hexdigest()==expected, path
-          changed = set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())
-          assert changed <= set(guard['allowed']), changed
-          assert not subprocess.check_output(['git','ls-files','--others','--exclude-standard'],text=True).strip(), 'Unexpected new files'
-          print('All unselected files unchanged; only selected image pairs may be staged.')
-          PY
+          extra=()
+          if [ "$SECTION" = tools ]; then extra+=(--determinism --protected); fi
+          python scripts/verify_tools.py "${extra[@]}" --report "$RUNNER_TEMP/tools-verification.json"
+      - name: Verify all unselected tracked files and output scope
+        run: |
+          python scripts/section_guard.py check --guard "$RUNNER_TEMP/constellation-guard.json"
           git diff --check
       - name: Record rendering environment
         run: |
@@ -168,6 +137,8 @@ jobs:
           name: constellation-verification-${{ github.sha }}
           path: |
             ${{ runner.temp }}/frameworks-verification.json
+            ${{ runner.temp }}/tools-verification.json
+            ${{ runner.temp }}/constellation-guard.json
             ${{ runner.temp }}/render-environment.json
           if-no-files-found: error
       - name: Commit generated image assets
@@ -180,6 +151,7 @@ jobs:
           for section in "${sections[@]}"; do
             git add "assets/constellation-${section}.gif" "assets/constellation-${section}.png"
           done
+          python scripts/section_guard.py check --guard "$RUNNER_TEMP/constellation-guard.json"
           if ! git diff --cached --quiet; then
             remote_head=$(git ls-remote origin "refs/heads/${GITHUB_REF_NAME}" | cut -f1)
             test "$remote_head" = "$GITHUB_SHA"

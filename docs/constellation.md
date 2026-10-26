@@ -10,7 +10,7 @@ The previous 20-node poster was difficult to read on phones, especially the bott
 - **Frameworks & Runtimes (12):** React, Next.js, Node.js, R3F, Three.js, Vue.js, Google Apps Script, TailwindCSS, Bootstrap, Framer Motion, jQuery, Prisma
 - **Tools & Platforms (9):** PostgreSQL, Docker, Git, Cloudflare, Linux, VS Code, Blender, ChatGPT, Claude
 
-Frameworks now uses **Quiet Orbits / Structure**, with two shared elliptical paths behind **twelve outline-particle symbols**. Tools retains its original three-column layout and awaits its Space Station / Observatory design phase. The completed Languages image is a distinct 5-column × 2-row, 1600×780 layout, arranged for left-to-right frontend → backend reading. It displays only particle icons and language names, without secondary status labels or connector lines. Brightness is intentionally high across all groups and conveys **no proficiency ranking**. Internal activity metadata is retained: MoonBit is used in [Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow), based on the public MoonBit/WebAssembly runtime implementation; C++ and Rust remain Exploring. ChatGPT/Claude are explicitly AI tools, not programming languages.
+Frameworks now uses **Quiet Orbits / Structure**, with two shared elliptical paths behind **twelve outline-particle symbols**. Tools now completes the story with **Station Grid / Space Station / Observatory**, one shared structure behind the original nine frozen particle silhouettes. The completed Languages image is a distinct 5-column × 2-row, 1600×780 layout, arranged for left-to-right frontend → backend reading. It displays only particle icons and language names, without secondary status labels or connector lines. Brightness is intentionally high across all groups and conveys **no proficiency ranking**. Internal activity metadata is retained: MoonBit is used in [Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow), based on the public MoonBit/WebAssembly runtime implementation; C++ and Rust remain Exploring. ChatGPT/Claude are explicitly AI tools, not programming languages.
 
 ## Sources
 
@@ -26,13 +26,117 @@ Neither RAOS nor Assembly are listed. The portfolio source is referenced, not mu
 ```bash
 python -m pip install -r scripts/requirements.txt
 python scripts/render_sections.py --only frameworks
-python scripts/verify_frameworks.py --determinism --protected
+python scripts/verify_frameworks.py --determinism
+python scripts/render_sections.py --only tools
+python scripts/verify_tools.py --determinism --protected
 python scripts/verify_languages.py
 ```
 
-The canonical Frameworks command defaults to **64 frames × 100ms = 6.4 seconds** at 1200×1110. Its PNG is a neutral, undrifted/unpulsed pose with orbital lights at phase zero; it is a lossless RGB poster, not a decoded GIF frame. `--frames` remains available for disposable experiments, but the production verifier requires 64 frames. Languages still supports `--only languages` (36×150ms), and Tools still supports `--only tools` (18 frames, original encoding). Section selection writes only the chosen pair of images. The old combined assets were removed as obsolete.
+The canonical Frameworks command defaults to **64 frames × 100ms = 6.4 seconds** at 1200×1110. Its PNG is a neutral, undrifted/unpulsed pose with orbital lights at phase zero; it is a lossless RGB poster, not a decoded GIF frame. `--frames` remains available for disposable experiments, but the production verifier requires 64 frames. Languages still supports `--only languages` (36×150ms), and Tools supports `--only tools` (48×160ms, Station Grid). Section selection writes only the chosen pair of images. The old combined assets were removed as obsolete.
 
 Frozen Languages verification uses CairoSVG and system fonts/FreeType in addition to the pinned Python requirements. The approved CI-compatible environment uses system FreeType 2.14.3; a machine with a different SVG rasterizer can reject the frozen Languages PNG. Do not regenerate or replace Languages to make a Frameworks change pass. Frameworks' audited contour fixture removes this source of silhouette variation from its production rendering.
+
+## Tools — Station Grid (October 27, 2026 JST)
+
+The final chapter is **DUST → ORBITS → OBSERVATORY**. Nine names remain in
+row-major order: PostgreSQL / Docker / Git; Cloudflare / Linux / VS Code;
+Blender / ChatGPT / Claude. Anchors are X=(215,600,985), Y=(222,444,666) on
+1200×900. Names use 38px bold at Y+95; the selected A prototype's **AI TOOL**
+annotations remain 20px bold at Y+130. The subtitle, quiet 17px signature and
+right-side YT-TECHDEV match A. No proficiency footer, metrics, dependency edges,
+individual cards or orbital ellipses are introduced.
+
+The two fonts and their original license are frozen from that same study under
+`scripts/tools_fonts/`. Tools verifies their exact hashes and uses them without
+a fallback; runner font-package changes cannot silently change its typography.
+The other renderers continue to use their existing font paths.
+
+`tools_observatory.py` owns the static navy haze/stars, chamfered shared hull,
+two metallic supports, deck fragments, four signal carriers and four amber
+navigation lamps. It reproduces the approved `Tools_Concept_A_Station_Grid.png`
+(reference SHA-256 `7618734c27cee4d87602eb3505c15f88fd3ddc00b6f8f5db67cb72a451527eec`).
+The versioned `tools_station_reference.png` preserves that exact review input.
+The production poster must match it pixel-for-pixel outside two bounded regions:
+the removed DESIGN STUDY / A stamp and one relocated top-deck signal. In A, the
+carrier centered at (165,146) lies entirely behind the fixed first-logo mask;
+production moves its center along the same deck to (365,146), so all four
+carriers contribute visible signals. No symbol, name, background, structural
+geometry or typography is changed by this bounded functional correction.
+
+### Historical reproducibility and symbol evidence
+
+**REPRODUCIBLE BASELINE.** The committed Tools PNG came from asset commit
+`08eb31353501607086cd206bbd4de43d87ac60c4`, renderer commit
+`6624f5dc94588a4c7ea6c1391bdb53ddcda6b10a`. Its Git Blob SHA is
+`b71675893426c6e1797b25c985e4c584ef87528c`, SHA-256
+`3a526dd36c3f7f1e20941ea3475265df216dafc101747618a9ee7f2845715e97`.
+The baseline renderer at `88727d70ba53077221207ed2b9a5064e73be25ed` differs by
+9,496 pixels: 8,823 inside symbol envelopes and 673 outside. Restoring the old
+sampler (without the later six-pixel transparent crop border) and old right
+footer X=1158 instead of 1157 reproduces the entire original PNG with zero
+changed pixels and identical encoded bytes. All Tools source SVGs remain the
+same. Neutral/frozen phase is used; the old noninteger 1.6 pulse harmonic is
+irrelevant to that poster and is not carried into the new animation.
+
+Controlled reproduction: Python 3.12.14, Pillow 12.3.0 (bundled FreeType 2.14.3),
+CairoSVG 2.8.2, Cairo 1.18.0, system FreeType 2.13.2. DejaVu Sans regular SHA-256
+is `ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280`;
+bold is `5c1247acef7f2b8522a31742c76d6adcb5569bacc0be7ceaa4dc39dd252ce895`.
+No historical environment version is invented: this is the measured matching
+reproduction environment. Tools symbols contain no SVG text; historical samples
+and pixel extraction were independently compared with all nine frozen RGBA
+layers in the original design-study bundle: **all 9,968 pixels match**.
+
+`tools_particles.json` freezes these exact committed RGB pixels as integer
+(x,y) offsets from each historical neutral anchor, plus the original 1,000
+ordered source samples, SVG hashes, provenance, extraction method and per-symbol
+pixel hashes. Production uses the literal pixels, with integer translations
+only; it never resamples or rescales them. Fixture SHA-256 is
+`b64c8d900729f0dbebfc2cbfad50ba3e4bae7585c084a257fe79b94574dacc21`.
+The verifier independently re-extracts source-colored pixels from the immutable
+historical Git object, checks the fixture and all actual PNG/GIF symbol pixels,
+and rejects added, removed, swapped or recolored geometry. Languages and all
+Frameworks contour/RGB fixtures remain unchanged.
+
+### Encoding, protection and verification
+
+The canonical command generates **48 frames × 160ms = 7.68s**, infinite loop,
+with integer-harmonic signal motion and restrained lamp activity. Logos and
+labels are static. Fixed protection includes the complete historical extraction
+and dot radii, type bounds, header/footer and blur/AA clearance; station and
+signal alpha are forced to zero in each core after filtering. The static-field
+check uses a fixed continuous motion envelope rather than moving masks.
+One common palette reserves all nine literal symbol RGBs; dithering is disabled.
+Both encodings are fully decoded in memory before same-directory fsync and atomic
+file replacements. PNGs cannot be exposed as partially written byte streams.
+
+`verify_tools.py` checks actual inventory, text, all bounds/clearances, historical
+pixels, reference A, masks, global/local palettes, all 48 decoded frames, every
+duration, loop metadata, periodic endpoints, seam, background stability, color
+fidelity and real 375/320px resizes. `--determinism` runs the canonical CLI twice
+in a disposable copy, compares both image hashes and checks every unselected
+file. `--protected` is specific to this Tools phase's four frozen L/F blobs.
+Negative controls reject inventory/identity/label/annotation/footer mutations,
+changed fixture/pixels, disabled protection, timing/loop corruption, background
+variation and protected-asset writes. Separate real-index guard tests reject
+unauthorized output, staging, untracked files and guard tampering.
+
+CI now accepts explicit **tools** while preserving **both = languages + frameworks**.
+Tools-only changes select Tools; a shared `render_sections.py` edit is accepted
+automatically only if AST comparison proves it changes solely Tools config,
+dispatch and frame defaults. Other ambiguous shared changes require explicit
+dispatch and fail closed. All three content verifiers run; only selected assets
+are regenerated. Historical `verify_frameworks.py --protected` remains unchanged
+and is not used as a Tools-update gate. The outer section-aware guard hashes
+all unselected tracked files, validates write scope and rechecks the real index
+after staging only selected GIF/PNG pairs. Branch concurrency, fresh-head check,
+non-force bot pushes, feature-branch-only writes and GITHUB_TOKEN's loop prevention
+are retained. No new runtime dependencies are introduced.
+
+VS Code's illustrative code symbol, ChatGPT's abstract knot and Cloudflare's
+simplified cloud remain intentionally unchanged. Their identity review and
+possible removal of AI TOOL annotations are **deferred, not completed**.
+Resized-image inspection does not verify physical-device or browser playback.
 
 ## Review gate
 
@@ -212,7 +316,7 @@ Restoring the historical source leaves 600 differing WebAssembly pixels under sy
 
 To reconstruct the fixture provenance independently, extract the historical commit with `git archive`, import its `prepared_nodes('frameworks', ...)`, and render its frozen phase-zero poster with the pinned Python dependencies, Cairo 1.18.0 and system FreeType 2.14.3. The DejaVu Sans Bold source font SHA-256 is `5c1247acef7f2b8522a31742c76d6adcb5569bacc0be7ceaa4dc39dd252ce895`. Compare the poster to the historical PNG before retaining samples. Production rendering uses the frozen samples directly, so this historical environment is not required for the canonical Frameworks command.
 
-### Verification and CI isolation
+### Historical verification and CI isolation (before Tools integration)
 
 `verify_frameworks.py` checks actual PNG pixels, all 64 fully decoded GIF frames against their intended quantized RGB renders, every duration, total time and loop flag. It checks the six original binary logo masks, identities/colors/anchors, typography bounds, continuous floating envelopes, zero orbital alpha in protected regions, mathematical endpoints, decoded seam versus normal adjacent-frame changes, palette fidelity, static background pixels and 320/375px label contrast. `--determinism` runs the canonical CLI twice in a disposable checkout and compares both output hashes to the validated images. `--protected` additionally asserts the frozen Languages/Tools Git Blob SHAs for this phase.
 
