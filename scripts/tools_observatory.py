@@ -1,4 +1,4 @@
-"""Station Grid: frozen Tools pixels, fixed masks and quiet periodic signals."""
+"""Station Grid: rigid floating instruments, fixed station and periodic signals."""
 from __future__ import annotations
 
 import hashlib
@@ -15,6 +15,11 @@ from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "scripts/tools_particles.json"
 FIXTURE_SHA256 = "b64c8d900729f0dbebfc2cbfad50ba3e4bae7585c084a257fe79b94574dacc21"
+MOTION_FIXTURE = ROOT / "scripts/tools_motion_v1.json"
+MOTION_SHA256 = "642b62f62fe5eae0add1d898b5263bcb5d8d3875b0a5988619fd6d189880b5c3"
+# Literal frozen pixels already include emphasized-dot radii. Integer placement
+# adds no resampling/AA/glow support; two extra pixels cover palette diagnostics.
+ENVELOPE_PAD = 2
 SIZE = (1200, 900)
 FRAMES, DURATION_MS = 48, 160
 COLUMNS, ROWS = (215, 600, 985), (222, 444, 666)
@@ -49,6 +54,25 @@ def signal_state(index, phase):
     return (round(x + dx * t, 9), round(y + dy * t, 9))
 
 
+def load_motion(path=MOTION_FIXTURE):
+    data = path.read_bytes()
+    if hashlib.sha256(data).hexdigest() != MOTION_SHA256:
+        raise ValueError("Reviewed Tools motion fixture changed")
+    return json.loads(data)['logos']
+
+
+def floating_offset(spec, phase, *, raster=True):
+    """A slow reversible diagonal drift, never an orbit around the grid anchor.
+
+    Both axes share one scalar. Different slopes and evenly separated phases
+    prevent synchronization. Round scalar epsilon before integer placement so
+    the exact periodic endpoint cannot flip a half-pixel rounding decision.
+    """
+    t = round(math.sin(spec['harmonic'] * phase + math.tau * spec['phase_turns']), 12)
+    values = (spec['ax'] * t, spec['ay'] * t)
+    return tuple(round(v) if raster else v for v in values)
+
+
 def navigation_strength(index, phase):
     return round(66 + 24 * math.sin(phase + index * .74))
 
@@ -74,6 +98,9 @@ class StationGrid:
         self.fixture = load_fixture()
         self.nodes = [dict(symbol, anchor=(COLUMNS[i % 3], ROWS[i // 3]))
                       for i, symbol in enumerate(self.fixture["symbols"])]
+        self.motion = load_motion()
+        if [m['key'] for m in self.motion] != [n['key'] for n in self.nodes]:
+            raise ValueError("Tools motion inventory mismatch")
         expected = [(n['key'], n['label'], n['category'], n['color'], n['annotation'])
                     for n in self.nodes]
         if list(cfg['icons']) != expected:
@@ -91,6 +118,7 @@ class StationGrid:
         self.background = self.make_background()
         self.structure = self.make_structure()
         self.foreground = self.make_foreground()
+        self.symbols = self.make_symbols()
         base = Image.alpha_composite(self.background.convert("RGBA"), self.structure)
         self.static = base.convert("RGB")
 
@@ -111,11 +139,14 @@ class StationGrid:
 
     def protection_boxes(self):
         boxes = []
-        # The approved fixed symbol core contains the full 173x141 extraction,
-        # original emphasized-dot radius and extra AA/glow clearance.
-        for node in self.nodes:
+        # Union historical cores with analytically bounded continuous motion.
+        # The reviewed motion fits inside the old cores: station pixels and
+        # signals remain unchanged, including their fixed 13px falloff.
+        for node, motion in zip(self.nodes, self.motion):
             x, y = node['anchor']
-            boxes.append((x - 100, y - 85, x + 100, y + 85))
+            l, t, r, b = self.logo_envelope(node, motion, ENVELOPE_PAD)
+            boxes.append((min(x - 100, l), min(y - 85, t),
+                          max(x + 100, r), max(y + 85, b)))
         d = ImageDraw.Draw(Image.new("L", SIZE))
         for xy, text, size, bold, anchor, _ in self.texts:
             l, t, r, b = d.textbbox(xy, text, font=self.font(size, bold), anchor=anchor)
@@ -123,6 +154,14 @@ class StationGrid:
                 boxes.append((l - 6, t - 6, r + 6, b + 6))
         boxes.extend(((34, 19, 1166, 121), (34, 838, 1166, 887)))
         return boxes
+
+    def logo_envelope(self, node, motion, pad=0):
+        """Inclusive bounds for every real phase, not a sampled-frame estimate."""
+        x, y = node['anchor']
+        xs, ys = [p[0] for p in node['pixels']], [p[1] for p in node['pixels']]
+        ax, ay = math.ceil(abs(motion['ax'])), math.ceil(abs(motion['ay']))
+        return (x + min(xs) - ax - pad, y + min(ys) - ay - pad,
+                x + max(xs) + ax + pad, y + max(ys) + ay + pad)
 
     def protect(self, layer):
         alpha = ImageChops.multiply(layer.getchannel("A"),
@@ -190,15 +229,32 @@ class StationGrid:
         return self.protect(Image.alpha_composite(glow, fine))
 
     def make_foreground(self):
+        """Stationary typography only; symbol pixels live in separate sprites."""
         layer = empty_layer()
         d = ImageDraw.Draw(layer)
-        for node in self.nodes:
-            x, y = node['anchor']
-            for px, py, r, g, b in node['pixels']:
-                d.point((x + px, y + py), fill=(r, g, b, 255))
         for xy, text, size, bold, anchor, color in self.texts:
             d.text(xy, text, font=self.font(size, bold), anchor=anchor,
                    fill=(*color, 255))
+        return layer
+
+    def make_symbols(self):
+        sprites = []
+        for node in self.nodes:
+            xs, ys = [p[0] for p in node['pixels']], [p[1] for p in node['pixels']]
+            l, t, r, b = min(xs), min(ys), max(xs), max(ys)
+            sprite = Image.new('RGBA', (r-l+1, b-t+1))
+            d = ImageDraw.Draw(sprite)
+            for px, py, red, green, blue in node['pixels']:
+                d.point((px-l, py-t), fill=(red, green, blue, 255))
+            sprites.append((sprite, (l, t)))
+        return sprites
+
+    def symbol_layer(self, phase, *, floating=True):
+        layer = empty_layer()
+        for node, spec, (sprite, origin) in zip(self.nodes, self.motion, self.symbols):
+            dx, dy = floating_offset(spec, phase) if floating else (0, 0)
+            x, y = node['anchor']
+            layer.alpha_composite(sprite, (x + origin[0] + dx, y + origin[1] + dy))
         return layer
 
     def signal_layer(self, phase, *, only=None):
@@ -222,8 +278,9 @@ class StationGrid:
         glow = core.filter(ImageFilter.GaussianBlur(2))
         return self.protect(Image.alpha_composite(glow, core))
 
-    def render(self, phase):
+    def render(self, phase, *, floating=True):
         base = Image.alpha_composite(self.static.convert("RGBA"), self.signal_layer(phase))
+        base = Image.alpha_composite(base, self.symbol_layer(phase, floating=floating))
         return Image.alpha_composite(base, self.foreground).convert("RGB")
 
     def motion_mask(self):
@@ -234,6 +291,8 @@ class StationGrid:
             d.rectangle((x-dx-20,y-dy-20,x+dx+20,y+dy+20), fill=255)
         for x, y in NAVIGATION:
             d.rectangle((x - 20, y - 18, x + 20, y + 18), fill=255)
+        for node, motion in zip(self.nodes, self.motion):
+            d.rectangle(self.logo_envelope(node, motion, ENVELOPE_PAD), fill=255)
         return mask
 
 
@@ -298,4 +357,4 @@ def render_assets(renderer, assets, frames=FRAMES):
     finally:
         for temporary, _ in staged:
             temporary.unlink(missing_ok=True)
-    print(f"tools: 9 frozen symbols; {frames}x{DURATION_MS}ms; GIF {len(gif):,} bytes; PNG {len(png):,} bytes")
+    print(f"tools: 9 floating frozen symbols; {frames}x{DURATION_MS}ms; GIF {len(gif):,} bytes; PNG {len(png):,} bytes")

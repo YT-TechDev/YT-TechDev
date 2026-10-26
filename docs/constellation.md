@@ -36,7 +36,17 @@ The canonical Frameworks command defaults to **64 frames × 100ms = 6.4 seconds*
 
 Frozen Languages verification uses CairoSVG and system fonts/FreeType in addition to the pinned Python requirements. The approved CI-compatible environment uses system FreeType 2.14.3; a machine with a different SVG rasterizer can reject the frozen Languages PNG. Do not regenerate or replace Languages to make a Frameworks change pass. Frameworks' audited contour fixture removes this source of silhouette variation from its production rendering.
 
-## Tools — Station Grid (October 27, 2026 JST)
+## Tools — Floating instruments (October 27, 2026 JST)
+
+The current Tools renderer floats all nine original sprites independently while
+the station and labels remain fixed. The [motion contract and brand-status
+record](tools-floating-review.md) document the continuous bounds, preservation
+checks and three identity refinements blocked by published brand restrictions.
+Those refinements are not marked complete. The following Station Grid record
+describes the immutable pre-motion baseline; its neutral reference and historical
+pixel tests remain active.
+
+## Tools — Station Grid baseline (October 27, 2026 JST)
 
 The final chapter is **DUST → ORBITS → OBSERVATORY**. Nine names remain in
 row-major order: PostgreSQL / Docker / Git; Cloudflare / Linux / VS Code;

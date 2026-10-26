@@ -25,6 +25,8 @@ on:
       - "scripts/verify_frameworks.py"
       - "scripts/tools_observatory.py"
       - "scripts/tools_particles.json"
+      - "scripts/tools_motion_v1.json"
+      - "scripts/tools_review.py"
       - "scripts/tools_station_reference.png"
       - "scripts/tools_fonts/**"
       - "scripts/verify_tools.py"

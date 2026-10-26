@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import types
 from pathlib import Path
 from unittest.mock import patch
 
@@ -38,6 +39,7 @@ PROTECTED_BLOBS = {
 ORIGINAL_BLOB = 'b71675893426c6e1797b25c985e4c584ef87528c'
 REFERENCE = ROOT / 'scripts/tools_station_reference.png'
 REFERENCE_SHA256 = '7618734c27cee4d87602eb3505c15f88fd3ddc00b6f8f5db67cb72a451527eec'
+MOTION_BASELINE = '7f88216d36366c67d9837626a131ae87b5c55a7d'
 
 
 def sha256(path):
@@ -133,13 +135,20 @@ def verify_structure(renderer):
             'historical_pixel_counts': historical_pixels(renderer)}
 
 
-def verify_symbols(poster, renderer):
-    for n in renderer.nodes:
+def verify_symbols(poster, renderer, phase=0):
+    measured = {}
+    for n, spec in zip(renderer.nodes, renderer.motion):
         x, y = n['anchor']
-        actual = [[px, py, *poster.getpixel((x + px, y + py))]
-                  for py in range(-62, 63) for px in range(-82, 83)
-                  if max(poster.getpixel((x + px, y + py))) > 100]
+        dx, dy = tools.floating_offset(spec, phase)
+        l, t, r, b = renderer.logo_envelope(n, spec)
+        painted = [[px, py, *poster.getpixel((px, py))]
+                   for py in range(t, b+1) for px in range(l, r+1)
+                   if max(poster.getpixel((px, py))) > 100]
+        actual = [[px-x-dx, py-y-dy, *rgb] for px, py, *rgb in painted]
         assert actual == n['pixels'], f'{n["key"]}: actual silhouette/RGB changed'
+        measured[n['key']] = [min(p[a] for p in painted)-n['anchor'][a]
+                              -min(p[a] for p in n['pixels']) for a in (0, 1)]
+    return measured
 
 
 def verify_masks(renderer):
@@ -149,6 +158,9 @@ def verify_masks(renderer):
         d.rectangle(b, fill=255)
     assert ImageChops.difference(expected, renderer.protected).getbbox() is None, 'Fixed mask changed'
     assert ImageChops.multiply(renderer.structure.getchannel('A'), expected).getbbox() is None, 'Station enters protected core'
+    for node, spec in zip(renderer.nodes, renderer.motion):
+        box = renderer.logo_envelope(node, spec, tools.ENVELOPE_PAD)
+        assert expected.crop((box[0], box[1], box[2]+1, box[3]+1)).getextrema() == (255, 255), 'Continuous floating envelope leaves fixed protection'
     probe = Image.new('RGBA', tools.SIZE, (150, 120, 90, 180))
     assert ImageChops.multiply(renderer.protect(probe).getchannel('A'), expected).getbbox() is None, 'Protection disabled'
     for n in range(48):
@@ -165,7 +177,9 @@ def verify_reference(renderer):
     """Exact approved A, except the removed study stamp and one carrier fix."""
     assert sha256(REFERENCE) == REFERENCE_SHA256, 'Approved A reference changed'
     reference = Image.open(REFERENCE).convert('RGB')
-    production = renderer.render(0)
+    # Preserve the strict historical gate at the original neutral pose. The
+    # animated foreground is checked separately against all actual GIF frames.
+    production = renderer.render(0, floating=False)
     allowed = Image.new('L', tools.SIZE)
     draw = ImageDraw.Draw(allowed)
     draw.rectangle((1020, 24, 1165, 52), fill=255)  # DESIGN STUDY / A only.
@@ -174,6 +188,70 @@ def verify_reference(renderer):
     assert ImageChops.multiply(diff, ImageChops.invert(allowed).convert('RGB')).getbbox() is None, 'Production deviates from approved A outside bounded exceptions'
     return {'reference_sha256': REFERENCE_SHA256, 'outside_allowed_regions_changed_pixels': 0,
             'exceptions': ['remove DESIGN STUDY / A stamp', 'move fully occluded top-deck carrier from x=165 to x=365']}
+
+
+def verify_motion(renderer):
+    """Measure rendered sprite positions, independently of moving signal lights."""
+    phases = [m['phase_turns'] % 1 for m in renderer.motion]
+    assert len(set(phases)) == 9, 'Identical logo phase offsets'
+    result = {}
+    draw = ImageDraw.Draw(Image.new('L', tools.SIZE))
+    for index, (node, spec) in enumerate(zip(renderer.nodes, renderer.motion)):
+        assert spec['key'] == node['key']
+        assert isinstance(spec['harmonic'], int) and spec['harmonic'] == 1, 'Nonperiodic or accelerated motion'
+        assert 3 <= abs(spec['ax']) <= 5 and 9 <= spec['ay'] <= 10, 'Unreviewed displacement'
+        assert tools.floating_offset(spec, 0, raster=False) == tools.floating_offset(spec, math.tau, raster=False), 'Continuous endpoint fails'
+        box = renderer.logo_envelope(node, spec, tools.ENVELOPE_PAD)
+        x, y = node['anchor']
+        name = draw.textbbox((x, y+95), node['label'], font=renderer.font(38, True), anchor='mm')
+        # Keep the former neutral >=19px check in verify_structure, and add the
+        # full continuous floating bound (no frame sampling can miss an extreme).
+        gap = name[1] - (box[3] - tools.ENVELOPE_PAD)
+        assert gap >= 10, f'{node["key"]}: continuous label collision/clearance'
+        assert 43 < box[0] < box[2] < 1157 and 141 < box[1] < box[3] < 823, 'Floating clipping'
+        for xy, text, size, bold, anchor, _ in renderer.texts:
+            b = draw.textbbox(xy, text, font=renderer.font(size, bold), anchor=anchor)
+            assert box[2] < b[0] or b[2] < box[0] or box[3] < b[1] or b[3] < box[1], 'Continuous logo/text collision'
+        # Derive translation from the ACTUAL symbol layer, not the motion config.
+        local = (min(p[0] for p in node['pixels']), min(p[1] for p in node['pixels']))
+        offsets = []
+        for frame in range(48):
+            phase = math.tau*frame/48
+            layer = renderer.symbol_layer(phase).getchannel('A')
+            crop = layer.crop((box[0], box[1], box[2]+1, box[3]+1))
+            bounds = crop.getbbox()
+            assert bounds, 'Missing floating instrument'
+            measured = (bounds[0]+box[0]-x-local[0], bounds[1]+box[1]-y-local[1])
+            t = round(math.sin(phase + math.tau*spec['phase_turns']), 12)
+            assert measured == (round(spec['ax']*t), round(spec['ay']*t)), 'Rendered logo is static or on wrong trajectory'
+            offsets.append(measured)
+        spans = [max(p[a] for p in offsets)-min(p[a] for p in offsets) for a in (0,1)]
+        assert spans[0] >= 6 and spans[1] >= 18, 'Static/imperceptible foreground'
+        steps = [max(abs(offsets[(i+1)%48][a]-offsets[i][a]) for a in (0,1)) for i in range(48)]
+        assert max(steps) <= 2 and steps[-1] <= max(steps[:-1]), 'Logo motion/seam jumps'
+        result[node['key']] = {'amplitude_x': abs(spec['ax']), 'amplitude_y': spec['ay'],
+            'phase_turns': spec['phase_turns'], 'peak_radial_bound': math.hypot(spec['ax'], spec['ay']),
+            'rendered_span_xy': spans, 'peak_integer_step': max(steps), 'seam_step': steps[-1],
+            'continuous_logo_label_gap': gap, 'padded_continuous_envelope': box,
+            'vertical_travel_at_320px': spans[1]*320/1200}
+    assert ImageChops.difference(renderer.symbol_layer(0), renderer.symbol_layer(math.tau)).getbbox() is None
+    return result
+
+
+def verify_station_history(renderer):
+    """Compare all RGB station/signal phases with the exact starting renderer."""
+    source = subprocess.check_output(['git', 'show', f'{MOTION_BASELINE}:scripts/tools_observatory.py'], cwd=ROOT)
+    old = types.ModuleType('historical_tools')
+    old.__file__ = str(ROOT / 'scripts/tools_observatory.py')
+    exec(compile(source, old.__file__, 'exec'), old.__dict__)
+    baseline = old.StationGrid(sections.SECTIONS['tools'])
+    for name in ('background', 'structure', 'protected', 'exclusion', 'static'):
+        assert ImageChops.difference(getattr(renderer, name), getattr(baseline, name)).getbbox() is None, f'Station {name} changed'
+    for i in range(48):
+        phase = math.tau*i/48
+        assert ImageChops.difference(renderer.render(phase, floating=False), baseline.render(phase)).getbbox() is None, 'Historical station/signal/text phase changed'
+    return {'baseline': MOTION_BASELINE, 'identical_neutral_rgb_phases': 48,
+            'station_background_structure_fixed_masks': 'EXACT'}
 
 
 def verify_palette(path):
@@ -243,13 +321,18 @@ def verify_assets(renderer, assets):
     decoded = decode_gif(gif)
     palette = tools.global_palette(renderer)
     static_mask = ImageChops.invert(renderer.motion_mask())
-    assert static_mask.histogram()[255] > 1_000_000
+    # Exclude nine newly moving instrument envelopes as well as old signals;
+    # the historical neutral reference still checks the whole original station.
+    assert static_mask.histogram()[255] > tools.SIZE[0]*tools.SIZE[1]*.75
     max_error = 0
+    measured_motion = {n['key']: [] for n in renderer.nodes}
     for i, frame in enumerate(decoded):
         source = renderer.render(math.tau * i / 48)
         expected = source.quantize(palette=palette, dither=Image.Dither.NONE).convert('RGB')
         assert ImageChops.difference(frame, expected).getbbox() is None, f'GIF frame {i} content mismatch'
-        verify_symbols(frame, renderer)
+        actual_offsets = verify_symbols(frame, renderer, math.tau*i/48)
+        for key, offset in actual_offsets.items():
+            measured_motion[key].append(offset)
         delta = ImageChops.difference(frame, decoded[0])
         assert ImageChops.multiply(delta, static_mask.convert('RGB')).getbbox() is None, 'GIF background variation'
         max_error = max(max_error, distance(source, frame))
@@ -258,6 +341,12 @@ def verify_assets(renderer, assets):
     assert steps[-1] <= max(steps[:-1]) * 1.25, 'Encoded loop jumps'
     assert max_error < 2, 'GIF color fidelity degraded'
     assert gif.stat().st_size <= 2_500_000, 'Preferred GIF budget exceeded; review required'
+    decoded_motion = {}
+    for key, offsets in measured_motion.items():
+        spans = [max(p[a] for p in offsets)-min(p[a] for p in offsets) for a in (0,1)]
+        assert spans[0] >= 6 and spans[1] >= 18, 'Decoded logo is static'
+        decoded_motion[key] = {'span_xy': spans, 'positions': offsets,
+                               'vertical_travel_320px': spans[1]*320/1200}
     # Real downsampled content: quantify each name and symbol, then inspect previews.
     for width in (375, 320):
         small = poster.resize((width, round(900 * width / 1200)), Image.Resampling.LANCZOS)
@@ -274,6 +363,7 @@ def verify_assets(renderer, assets):
             'seam_rgb_delta': steps[-1], 'interior_max_rgb_delta': max(steps[:-1]),
             'max_whole_frame_rgb_error': max_error, 'protected_symbol_rgb_error': 0,
             'png_sha256': sha256(png), 'gif_sha256': sha256(gif),
+            'decoded_logo_motion': decoded_motion,
             'resized_previews': [375, 320], 'real_device_playback': 'UNVERIFIED'}
 
 
@@ -303,6 +393,18 @@ def verify_negative_controls(renderer, assets):
     disabled = copy.copy(renderer)
     disabled.protect = lambda layer: layer
     reject('mask disabled', lambda: verify_masks(disabled))
+    static = copy.copy(renderer)
+    static.symbol_layer = lambda phase, **kwargs: renderer.symbol_layer(0)
+    reject('static logo animation with live station signals', lambda: verify_motion(static))
+    for name, mutate in (
+        ('identical logo phases', lambda m: [s.update(phase_turns=0) for s in m]),
+        ('excessive displacement causing collision', lambda m: m[0].update(ay=100)),
+        ('broken periodic closure', lambda m: m[0].update(harmonic=1.1)),
+    ):
+        changed = copy.copy(renderer)
+        changed.motion = copy.deepcopy(renderer.motion)
+        mutate(changed.motion)
+        reject(name, lambda: verify_motion(changed))
     hidden = list(tools.SIGNALS)
     hidden[2] = (165, 146, 42, 0)
     with patch.object(tools, 'SIGNALS', tuple(hidden)):
@@ -312,9 +414,12 @@ def verify_negative_controls(renderer, assets):
         fixture = root / 'particles.json'
         fixture.write_bytes(tools.FIXTURE.read_bytes().replace(b'PostgreSQL', b'PostgreSQX', 1))
         reject('changed frozen fixture', lambda: tools.load_fixture(fixture))
+        fixture.write_bytes(tools.MOTION_FIXTURE.read_bytes().replace(b'"ax": 4', b'"ax": 7', 1))
+        reject('invalid motion fixture', lambda: tools.load_motion(fixture))
         altered = Image.open(assets / 'constellation-tools.png').convert('RGB')
         p = renderer.nodes[0]['pixels'][0]
-        altered.putpixel((215 + p[0], 222 + p[1]), (0, 0, 0))
+        dx, dy = tools.floating_offset(renderer.motion[0], 0)
+        altered.putpixel((215 + dx + p[0], 222 + dy + p[1]), (0, 0, 0))
         reject('changed actual symbol pixel', lambda: verify_symbols(altered, renderer))
         original = Image.open(assets / 'constellation-tools.png').convert('RGB')
         for name, box in (
@@ -325,6 +430,11 @@ def verify_negative_controls(renderer, assets):
             changed = original.copy()
             changed.paste((0, 0, 0), box)
             reject(name, lambda: verify_poster(changed, renderer))
+        moved = original.copy()
+        box = (83, 299, 346, 336)
+        moved.paste((0, 0, 0), box)
+        moved.paste(original.crop(box), (box[0], box[1]+3))
+        reject('unexpected label displacement', lambda: verify_poster(moved, renderer))
         raw = (assets / 'constellation-tools.gif').read_bytes()
         timing = root / 'timing.gif'
         timing.write_bytes(raw.replace(b'\x21\xf9\x04\x04\x10\x00', b'\x21\xf9\x04\x04\x11\x00', 1))
@@ -383,6 +493,8 @@ def main():
     args = parser.parse_args()
     renderer = load_renderer()
     result = {'structure': verify_structure(renderer), 'approved_reference': verify_reference(renderer),
+              'floating_motion': verify_motion(renderer),
+              'station_history': verify_station_history(renderer),
               'animation': verify_assets(renderer, args.assets),
               'palette': verify_palette(args.assets / 'constellation-tools.gif'),
               'negative_controls': verify_negative_controls(renderer, args.assets)}

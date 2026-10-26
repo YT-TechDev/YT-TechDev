@@ -76,7 +76,8 @@ def select(changed, requested=None, before_source=None, after_source=None):
         if path.removeprefix('scripts/') in FRAMEWORK_SOURCES or path.startswith('scripts/framework_brand_sources/'):
             identified.add('frameworks')
         if path in {'scripts/tools_observatory.py', 'scripts/tools_particles.json',
-                    'scripts/tools_station_reference.png', 'scripts/verify_tools.py'} or path.startswith('scripts/tools_fonts/'):
+                    'scripts/tools_station_reference.png', 'scripts/tools_motion_v1.json',
+                    'scripts/tools_review.py', 'scripts/verify_tools.py'} or path.startswith('scripts/tools_fonts/'):
             identified.add('tools')
     shared = changed & SHARED
     if shared:
