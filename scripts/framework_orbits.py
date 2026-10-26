@@ -43,6 +43,36 @@ POLISH_SHA256 = "4dc725dc2fb0743379188bc3492605db0bbb44eaf5ce0c4346e7546603fa2d4
 POLISHED_KEYS = ("framermotion", "googleappsscript")
 PRESERVED_KEYS = ("react", "nextjs", "nodejs", "r3f", "threedotjs",
                   "vue", "tailwindcss", "jquery", "prisma")
+BOOTSTRAP_SVG = Path(__file__).with_name("framework_brand_sources") / "bootstrap-logo.svg"
+BOOTSTRAP_PNG = BOOTSTRAP_SVG.with_name("bootstrap-logo-128.png")
+BOOTSTRAP_SVG_SHA256 = "df11d37a123e36a768f2a6064973c4c6ab17d1e3c6501c8bf434ca5c0134c9a2"
+BOOTSTRAP_PNG_SHA256 = "72cc867688c2a915ad0b720fa63718cde4237a931f74e43458801f87b5974fef"
+BOOTSTRAP_RGBA_SHA256 = "1168ac356ead386fceaf7a1ad5578cd4c1e89029a15e7e2348ccdd19636e3ecc"
+BOOTSTRAP_SIZE = (128, 102)  # Exactly 1/4 of the official 512 x 408 canvas.
+BOOTSTRAP_CLEAR_SPACE = 12  # Local layout allowance, not an upstream rule.
+BOOTSTRAP_VERSION = "v5.3.8"
+BOOTSTRAP_COMMIT = "25aa8cc0b32f0d1a54be575347e6d84b70b1acd7"
+
+
+def official_bootstrap():
+    """Verified unchanged SVG plus its faithful, filter-aware lossless raster.
+
+    Inkscape renders the SVG's original shadow/filter once, offline. Production
+    uses the pinned RGBA result to avoid CairoSVG's unsupported filter primitives
+    and platform-dependent rasterization. No recoloring, pulse or glow is added.
+    """
+    for path, digest in ((BOOTSTRAP_SVG, BOOTSTRAP_SVG_SHA256),
+                         (BOOTSTRAP_PNG, BOOTSTRAP_PNG_SHA256)):
+        if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+            raise ValueError("Official Bootstrap asset changed: " + path.name)
+    with Image.open(BOOTSTRAP_PNG) as source:
+        source.load()
+        if source.mode != "RGBA" or source.size != BOOTSTRAP_SIZE:
+            raise ValueError("Official Bootstrap raster format changed")
+        image = source.copy()
+    if hashlib.sha256(image.tobytes()).hexdigest() != BOOTSTRAP_RGBA_SHA256:
+        raise ValueError("Official Bootstrap lossless pixels changed")
+    return image
 
 
 def polish_fixture():
@@ -127,6 +157,10 @@ def light_angle(index, phase):
 def logo_envelope(node, padding=0, *, legacy=False):
     """Continuous full drift, rounded pixel centers, and emphasized dot radius."""
     key, *_, x, y, points = node
+    if key == "bootstrap" and not legacy:
+        width, height = BOOTSTRAP_SIZE
+        return (x-width//2-padding, y-height//2-padding,
+                x+width//2-1+padding, y+height//2-1+padding)
     # Local 3x AA has a 3px Lanczos footprint in addition to a 1.25px
     # accent radius. Five pixels conservatively contain its complete support.
     radius = 5 if key in POLISHED_KEYS and not legacy else DOT_RADIUS
@@ -143,7 +177,8 @@ def fixed_protection(nodes, font, *, legacy=False):
     boxes = [("header", (0, 0, SIZE[0]-1, 113))]
     for node in nodes:
         key, label, _, _, _, x, y, _ = node
-        boxes.append((key, logo_envelope(node, padding=3, legacy=legacy)))
+        padding = BOOTSTRAP_CLEAR_SPACE if key == "bootstrap" and not legacy else 3
+        boxes.append((key, logo_envelope(node, padding=padding, legacy=legacy)))
         box = draw.textbbox((x, y + LABEL_OFFSET), label,
                            font=font(LABEL_SIZE, True), anchor="mm")
         boxes.append((label, (box[0]-8, box[1]-6, box[2]+8, box[3]+6)))
@@ -157,6 +192,8 @@ class QuietOrbits:
     def __init__(self, cfg, nodes, font, brightness):
         self.cfg, self.nodes = cfg, nodes
         self.font, self.brightness = font, brightness
+        self.bootstrap_image = official_bootstrap()
+        self.bootstrap_mode = "official-svg-raster"
         polish = polish_fixture()
         self.sample_colors = {**refinement_fixture()["colors"], **polish["colors"]}
         self.polish_styles = polish["styles"]
@@ -245,6 +282,13 @@ class QuietOrbits:
         for i, (key, label, activity, color, _, x0, y0, points) in enumerate(self.nodes):
             dx, dy = (0, 0) if freeze else floating_offset(i, phase)
             rgb = tuple(int(color[j:j+2], 16) for j in (1, 3, 5))
+            if key == "bootstrap" and self.bootstrap_mode == "official-svg-raster":
+                # Static whole mark. Historical B samples remain archival only.
+                width, height = self.bootstrap_image.size
+                image.paste(self.bootstrap_image, (x0-width//2, y0-height//2), self.bootstrap_image)
+                draw.text((x0, y0+LABEL_OFFSET), label, anchor="mm",
+                          font=font(LABEL_SIZE, True), fill=(207, 228, 245))
+                continue
             if key in self.polish_styles:
                 self.polished_particles(image, self.nodes[i], i, phase, freeze)
                 draw.text((x0, y0+LABEL_OFFSET), label, anchor="mm",

@@ -15,6 +15,7 @@ on:
       - "scripts/framework_refinement_contours.json"
       - "scripts/framework_polish_contours.json"
       - "scripts/framework_polish_preserved_rgb.json"
+      - "scripts/framework_bootstrap_preserved_rgb.json"
       - "scripts/framework_preserved_rgb.json"
       - "scripts/framework_brand_sources/**"
       - "scripts/build_framework_refinement.py"
@@ -77,6 +78,7 @@ jobs:
                   before = 'HEAD^'
               changed = set(subprocess.check_output(['git','diff','--name-only',before,'HEAD'],text=True).splitlines())
               frameworks = bool(changed & {'scripts/framework_orbits.py','scripts/framework_contours.json','scripts/framework_expansion_contours.json','scripts/framework_refinement_contours.json','scripts/framework_preserved_rgb.json','scripts/framework_polish_contours.json','scripts/framework_polish_preserved_rgb.json','scripts/build_framework_refinement.py','scripts/build_framework_polish.py','scripts/verify_frameworks.py'})
+              frameworks |= 'scripts/framework_bootstrap_preserved_rgb.json' in changed
               frameworks |= any(p.startswith('scripts/framework_brand_sources/') for p in changed)
               frameworks |= any(p.startswith('assets/constellation-frameworks.') for p in changed)
               languages = bool(changed & {'scripts/verify_languages.py','assets/moonbit-official.png'})

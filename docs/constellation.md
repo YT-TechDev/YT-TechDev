@@ -10,7 +10,7 @@ The previous 20-node poster was difficult to read on phones, especially the bott
 - **Frameworks & Runtimes (12):** React, Next.js, Node.js, R3F, Three.js, Vue.js, Google Apps Script, TailwindCSS, Bootstrap, Framer Motion, jQuery, Prisma
 - **Tools & Platforms (9):** PostgreSQL, Docker, Git, Cloudflare, Linux, VS Code, Blender, ChatGPT, Claude
 
-Frameworks now uses **Quiet Orbits / Structure**, with two shared elliptical paths behind twelve symbols, with nine approved particle contours unchanged. Tools retains its original three-column layout and awaits its Space Station / Observatory design phase. The completed Languages image is a distinct 5-column × 2-row, 1600×780 layout, arranged for left-to-right frontend → backend reading. It displays only particle icons and language names, without secondary status labels or connector lines. Brightness is intentionally high across all groups and conveys **no proficiency ranking**. Internal activity metadata is retained: MoonBit is used in [Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow), based on the public MoonBit/WebAssembly runtime implementation; C++ and Rust remain Exploring. ChatGPT/Claude are explicitly AI tools, not programming languages.
+Frameworks now uses **Quiet Orbits / Structure**, with two shared elliptical paths behind **eleven outline-particle symbols and one unchanged official Bootstrap logo**. Tools retains its original three-column layout and awaits its Space Station / Observatory design phase. The completed Languages image is a distinct 5-column × 2-row, 1600×780 layout, arranged for left-to-right frontend → backend reading. It displays only particle icons and language names, without secondary status labels or connector lines. Brightness is intentionally high across all groups and conveys **no proficiency ranking**. Internal activity metadata is retained: MoonBit is used in [Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow), based on the public MoonBit/WebAssembly runtime implementation; C++ and Rust remain Exploring. ChatGPT/Claude are explicitly AI tools, not programming languages.
 
 ## Sources
 
@@ -43,7 +43,55 @@ Frozen Languages verification uses CairoSVG and system fonts/FreeType in additio
 
 Do not merge before visual approval. No changes to public profile main until the PR is merged.
 
-## Frameworks visual polish (October 26, 2026)
+## Official Bootstrap integration (October 26, 2026)
+
+Bootstrap is the sole exception to the particle rendering contract. The unchanged
+primary SVG referenced by the [official Bootstrap 5.3 brand documentation](https://getbootstrap.com/docs/5.3/about/brand/)
+is pinned to **v5.3.8**, commit `25aa8cc0b32f0d1a54be575347e6d84b70b1acd7`.
+Its SHA-256 is `df11d37a123e36a768f2a6064973c4c6ab17d1e3c6501c8bf434ca5c0134c9a2`.
+Full provenance, rasterization commands, checksums, license and usage assessment
+are in [the brand-source notes](../scripts/framework_brand_sources/bootstrap-README.md).
+
+The official 512×408 canvas is proportionally rasterized at **128×102**, centered
+on the existing **(985,671)** anchor. The logo stays static, retaining the official
+outer shape, B, purple and white gradients, stroke and built-in shadow. There is
+no particle sampling, pulse, added glow, recoloring or component animation.
+The existing Bootstrap label and all twelve anchors remain fixed. A 12px local
+clear-space allowance excludes orbital curves and moving lights. This allowance
+is a conservative layout choice, not a published Bootstrap spacing rule.
+
+Inkscape 1.2.2 produces the faithful lossless RGBA raster, including the SVG's
+original filter. The existing CairoSVG dependency does not implement every
+primitive in that shadow filter. Production therefore composites the verified
+SVG-derived PNG rather than substituting an incomplete runtime conversion. Both
+source and raster bytes and decoded RGBA pixels are pinned; no new runtime
+package is introduced. The canonical renderer remains deterministic and offline.
+
+All eleven other contours, multicolor samples, floating offsets, pulses and
+labels are preserved. `framework_bootstrap_preserved_rgb.json` records five
+unquantized foreground phases for each from baseline `fc6240cc1e43401c4ae3801186b96bc78802becb`.
+The previous Bootstrap contour stays in the immutable expansion fixture and is
+still exercised by the historical RGB checks. It cannot pass as active artwork.
+All earlier contour/RGB fixtures remain unchanged. The background/star hash,
+two orbital paths, subtitle, footer-free layout, 1200×1110 canvas and 64×100ms
+infinite animation retain their existing contracts.
+
+Verification separately checks SVG identity/provenance, lossless raster identity,
+all decoded GIF frames and Bootstrap color error. GIF quantization is lossy;
+decoded pixels are not claimed to be binary-identical to the vector or PNG.
+Negative controls reject modified/wrong SVGs, modified PNGs, recoloring, restored
+particle B, missing technology, protected-asset drift and all earlier failures.
+The full existing validation, Languages checks and Tools guards stay enabled.
+
+This is a referential technology listing with the adjacent name **Bootstrap**,
+not use of Bootstrap as the developer's own project brand. No endorsement or
+affiliation is claimed. This interpretation follows the documentation's request
+to use its mark when referencing Bootstrap; it is not brand-owner approval.
+PR #2 stays Draft and unmerged pending human design review.
+
+## Historical Frameworks visual polish (October 26, 2026)
+
+The Bootstrap hold described below is superseded by the official-asset exception above.
 
 The subtitle is now **FROM UI LIBRARIES TO APPLICATION SYSTEMS**, at the same position, font, size and color. The section title, twelve labels, 1200×1110 canvas and all twelve anchors are unchanged.
 

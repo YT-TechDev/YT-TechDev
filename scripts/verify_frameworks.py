@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from unittest.mock import patch
 
@@ -24,6 +25,9 @@ from framework_orbits import (
     global_palette, light_angle, logo_envelope, particle_pulse, prepared_contours,
     REFINEMENT_FIXTURE, REFINEMENT_SHA256, PRESERVED_KEYS, refinement_fixture,
     POLISH_FIXTURE, POLISH_SHA256, POLISHED_KEYS, polish_fixture,
+    BOOTSTRAP_SVG, BOOTSTRAP_PNG, BOOTSTRAP_SVG_SHA256, BOOTSTRAP_PNG_SHA256,
+    BOOTSTRAP_RGBA_SHA256, BOOTSTRAP_SIZE, BOOTSTRAP_CLEAR_SPACE,
+    BOOTSTRAP_VERSION, BOOTSTRAP_COMMIT, official_bootstrap,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,6 +44,8 @@ RGB_FIXTURE = ROOT / "scripts/framework_preserved_rgb.json"
 RGB_SHA256 = "a9d550ffa38d680c4ff5e66967f5bc78c9c10d3177338d8a2ed6926748d8fd1d"
 POLISH_RGB_FIXTURE = ROOT / "scripts/framework_polish_preserved_rgb.json"
 POLISH_RGB_SHA256 = "cacce835ecc191e8cc038ddfc534c8d8c697a9e8169b9cd00b89b8a96ff55b4f"
+BOOTSTRAP_RGB_FIXTURE = ROOT / "scripts/framework_bootstrap_preserved_rgb.json"
+BOOTSTRAP_RGB_SHA256 = "67219d4d327d0a98c29cca3c1b315669f54b51829793c67fcd82b8c74d173091"
 PROTECTED_BLOBS = {
     "assets/constellation-languages.gif": "9f5a84ddae394f44992215c59a4271e37a932fb4",
     "assets/constellation-languages.png": "50ae288464fd4e9de3db5bc69d3b479ebf88b385",
@@ -109,6 +115,7 @@ def verify_structure(renderer):
     nodes = renderer.nodes
     assert tuple(n[0] for n in nodes) == KEYS
     assert len(nodes) == 12 and len({n[1] for n in nodes}) == 12
+    bootstrap = verify_official_bootstrap(renderer)
     assert tuple(n[1] for n in nodes) == NAMES, "Twelve names/order changed"
     assert tuple(n[3] for n in nodes) == COLORS, "Original logo colors changed"
     assert tuple((n[5], n[6]) for n in nodes) == POSITIONS
@@ -212,6 +219,7 @@ def verify_structure(renderer):
     # Keep all 45 independent historical RGB checks. Motion's old drawing
     # is exercised as archived evidence, rather than deleting its coverage.
     archived = copy.copy(renderer)
+    archived.bootstrap_mode = "historical-particles"
     archived.polish_styles = {}
     archived.sample_colors = refined["colors"]
     historical_points = {**fixture["points"], **added["points"], **refined["points"]}
@@ -233,19 +241,63 @@ def verify_structure(renderer):
         node = next(n for n in nodes if n[0] == key)
         point_hash = hashlib.sha256(json.dumps(node[-1],separators=(",",":")).encode()).hexdigest()
         assert point_hash == current["points_sha256"][key], f"Preserved ordered points changed: {key}"
-        hashes = local_rgb_hashes(renderer, key, current)
+        # Preserve the old B evidence without keeping it active in production.
+        historical_bootstrap = copy.copy(renderer)
+        historical_bootstrap.bootstrap_mode = "historical-particles"
+        hashes = local_rgb_hashes(historical_bootstrap if key == "bootstrap" else renderer, key, current)
         assert hashes == current["rgb_sha256"][key], f"Preserved local source RGB changed: {key}"
         preserved_rgb[key] = hashes
+    assert sha256(BOOTSTRAP_RGB_FIXTURE) == BOOTSTRAP_RGB_SHA256, "Eleven-symbol baseline changed"
+    unchanged = json.loads(BOOTSTRAP_RGB_FIXTURE.read_text())
+    assert unchanged["baseline_commit"] == "fc6240cc1e43401c4ae3801186b96bc78802becb"
+    assert unchanged["keys"] == [key for key in KEYS if key != "bootstrap"]
+    eleven = {}
+    for key in unchanged["keys"]:
+        eleven[key] = local_rgb_hashes(renderer, key, unchanged)
+        assert eleven[key] == unchanged["rgb_sha256"][key], f"Preserved eleven-symbol RGB changed: {key}"
     return {"inventory": list(NAMES), "positions": list(POSITIONS),
             "minimum_logo_name_gap_px": min(gaps), "logo_masks_sha256": silhouettes,
             "original_fixture_sha256": sha256(FIXTURE), "expansion_fixture_sha256": sha256(EXPANSION_FIXTURE),
             "refinement_fixture_sha256": sha256(REFINEMENT_FIXTURE), "polish_fixture_sha256": sha256(POLISH_FIXTURE),
             "historical_local_rgb_sha256": historical_rgb, "preserved_local_rgb_sha256": preserved_rgb,
-            "strict_nine": list(PRESERVED_KEYS), "bootstrap": "unchanged; brand review hold",
-            "intentional_changes": {"framermotion":"verified three forms and dot; yellow outline",
-                                    "googleappsscript":"same ordered coordinates/colors; local AA only"},
+            "strict_nine": list(PRESERVED_KEYS), "bootstrap": bootstrap,
+            "preserved_eleven_local_rgb_sha256": eleven,
+            "intentional_changes": {"bootstrap":"unchanged official SVG, faithful static lossless raster"},
             "background_rgb_sha256": current["background_rgb_sha256"],
             "foreground_text_calls": len(texts), "foreground_line_calls": len(lines)}
+
+
+def verify_official_bootstrap(renderer):
+    assert renderer.bootstrap_mode == "official-svg-raster", "Historical particle B became active"
+    assert BOOTSTRAP_VERSION == "v5.3.8"
+    assert BOOTSTRAP_COMMIT == "25aa8cc0b32f0d1a54be575347e6d84b70b1acd7"
+    assert sha256(BOOTSTRAP_SVG) == BOOTSTRAP_SVG_SHA256 == "df11d37a123e36a768f2a6064973c4c6ab17d1e3c6501c8bf434ca5c0134c9a2"
+    assert blob_sha(BOOTSTRAP_SVG) == "f0189652b88bf6148676918156723948862578a8"
+    assert sha256(BOOTSTRAP_PNG) == BOOTSTRAP_PNG_SHA256
+    svg = ET.fromstring(BOOTSTRAP_SVG.read_bytes())
+    assert (svg.attrib["width"], svg.attrib["height"]) == ("512", "408")
+    assert BOOTSTRAP_SIZE == (128,102) and 128*408 == 102*512
+    assert BOOTSTRAP_CLEAR_SPACE == 12
+    reference = official_bootstrap()
+    assert renderer.bootstrap_image.mode == "RGBA" and renderer.bootstrap_image.size == BOOTSTRAP_SIZE
+    assert hashlib.sha256(renderer.bootstrap_image.tobytes()).hexdigest() == BOOTSTRAP_RGBA_SHA256
+    assert ImageChops.difference(reference,renderer.bootstrap_image).getbbox() is None
+    node = next(n for n in renderer.nodes if n[0] == "bootstrap")
+    assert (node[5],node[6]) == (985,671)
+    box = (921,620,1049,722)
+    assert logo_envelope(node) == (921,620,1048,721)
+    expected = Image.new("RGB", SIZE)
+    expected.paste(reference, box[:2], reference)
+    for phase in (0, math.pi/2, math.pi, 3*math.pi/2, math.tau):
+        actual = renderer.foreground(Image.new("RGB",SIZE),phase)
+        assert ImageChops.difference(actual.crop(box),expected.crop(box)).getbbox() is None, "Bootstrap transformed or overpainted"
+    return {"source_version": BOOTSTRAP_VERSION, "source_commit": BOOTSTRAP_COMMIT,
+            "svg_sha256": BOOTSTRAP_SVG_SHA256, "png_sha256": BOOTSTRAP_PNG_SHA256,
+            "rgba_sha256": BOOTSTRAP_RGBA_SHA256, "intrinsic_size": [512,408],
+            "render_size": list(BOOTSTRAP_SIZE), "anchor": [985,671],
+            "bbox_exclusive": list(box), "clear_space_px": BOOTSTRAP_CLEAR_SPACE,
+            "rendering_contract": "11 outline-particle symbols + 1 unchanged official Bootstrap logo",
+            "static_whole_mark": True}
 
 
 def local_rgb_hashes(renderer, key, fixture):
@@ -305,6 +357,13 @@ def verify_assets(renderer, assets):
     assert min(steps) > 0, "Frozen transition"
     assert steps[-1] <= max(steps[:-1])*1.25, "Decoded seam is abnormally large"
     assert max(quantization_errors) < 8, "Foreground color fidelity degraded"
+    bootstrap_box = (921,620,1049,722)
+    opaque = renderer.bootstrap_image.getchannel("A").point(lambda v: 255 if v == 255 else 0)
+    bootstrap_errors = [distance(a.crop(bootstrap_box),b.crop(bootstrap_box),opaque)
+                        for a,b in zip(source,decoded)]
+    assert max(bootstrap_errors) < 4, "Official Bootstrap GIF color fidelity degraded"
+    assert all(ImageChops.difference(source[0].crop(bootstrap_box),f.crop(bootstrap_box)).getbbox() is None for f in source)
+    assert all(ImageChops.difference(decoded[0].crop(bootstrap_box),f.crop(bootstrap_box)).getbbox() is None for f in decoded), "Official Bootstrap logo animates"
     for width in (375,320):
         small = poster.resize((width,round(SIZE[1]*width/SIZE[0])),Image.Resampling.LANCZOS)
         for node in renderer.nodes:
@@ -320,6 +379,8 @@ def verify_assets(renderer, assets):
             "periodic_endpoint_equal": True, "static_pixels_checked": static_mask.histogram()[255],
             "rgb_background_changed_pixels": 0, "decoded_background_changed_pixels": 0,
             "foreground_quantization_mean_abs_rgb_max": max(quantization_errors),
+            "bootstrap_opaque_quantization_mean_abs_rgb_max": max(bootstrap_errors),
+            "bootstrap_source_and_decoded_static": True,
             "sha256": {p.name: sha256(p) for p in (png,gif)}}
 
 
@@ -379,7 +440,14 @@ def verify_negative_controls(renderer):
     bad.nodes = list(renderer.nodes)
     n = list(bad.nodes[8]); n[-1] = list(n[-1]); n[-1][0] = (0,0)
     bad.nodes[8] = tuple(n)
-    reject("Bootstrap changed despite brand hold", lambda: verify_structure(bad))
+    reject("archived Bootstrap contour changed", lambda: verify_structure(bad))
+    bad = copy.copy(renderer)
+    bad.bootstrap_mode = "historical-particles"
+    reject("previous particle B restored", lambda: verify_structure(bad))
+    bad = copy.copy(renderer)
+    bad.bootstrap_image = renderer.bootstrap_image.copy()
+    bad.bootstrap_image.putpixel((64,51),(0,255,0,255))
+    reject("official Bootstrap recolored", lambda: verify_official_bootstrap(bad))
     bad = copy.copy(renderer)
     bad.background = renderer.background.copy()
     bad.background.putpixel((50,50),(255,255,255))
@@ -402,6 +470,26 @@ def verify_negative_controls(renderer):
             tampered.write_text(json.dumps(data))
             with patch.object(orbits, attr, tampered):
                 reject(attr+" coordinate drift", load_renderer)
+        for name, content in (
+            ("modified official SVG", BOOTSTRAP_SVG.read_bytes().replace(b"#9013fe",b"#ff0000")),
+            ("wrong Bootstrap asset", b'<svg xmlns="http://www.w3.org/2000/svg"><text>B</text></svg>'),
+        ):
+            tampered = Path(directory)/"bootstrap.svg"
+            tampered.write_bytes(content)
+            with patch.object(orbits,"BOOTSTRAP_SVG",tampered):
+                reject(name,orbits.official_bootstrap)
+        tampered = Path(directory)/"bootstrap.png"
+        tampered.write_bytes(BOOTSTRAP_PNG.read_bytes()+b"modified")
+        with patch.object(orbits,"BOOTSTRAP_PNG",tampered):
+            reject("modified official lossless raster",orbits.official_bootstrap)
+        protected_root = Path(directory)/"protected"
+        for path in PROTECTED_BLOBS:
+            target = protected_root/path
+            target.parent.mkdir(parents=True,exist_ok=True)
+            target.write_bytes((ROOT/path).read_bytes())
+        target.write_bytes(target.read_bytes()+b"modified")
+        with patch.object(sys.modules[__name__],"ROOT",protected_root):
+            reject("modified protected Languages/Tools asset",verify_protected)
     return {"rejected": rejected, "count": len(rejected)}
 
 
