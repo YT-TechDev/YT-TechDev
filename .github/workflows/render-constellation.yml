@@ -1,0 +1,166 @@
+name: Render profile constellation
+
+on:
+  push:
+    branches:
+      - main
+      - feat/profile-particle-constellation-20261025
+    paths:
+      - "scripts/render_constellation.py"
+      - "scripts/render_sections.py"
+      - "scripts/verify_languages.py"
+      - "scripts/framework_orbits.py"
+      - "scripts/framework_contours.json"
+      - "scripts/framework_expansion_contours.json"
+      - "scripts/framework_refinement_contours.json"
+      - "scripts/framework_polish_contours.json"
+      - "scripts/framework_polish_preserved_rgb.json"
+      - "scripts/framework_bootstrap_preserved_rgb.json"
+      - "scripts/bootstrap_outline_contours.json"
+      - "scripts/build_bootstrap_outline.py"
+      - "scripts/framework_preserved_rgb.json"
+      - "scripts/framework_brand_sources/**"
+      - "scripts/build_framework_refinement.py"
+      - "scripts/build_framework_polish.py"
+      - "scripts/verify_frameworks.py"
+      - "scripts/tools_observatory.py"
+      - "scripts/tools_particles.json"
+      - "scripts/tools_motion_v1.json"
+      - "scripts/tools_review.py"
+      - "scripts/tools_station_reference.png"
+      - "scripts/tools_fonts/**"
+      - "scripts/verify_tools.py"
+      - "scripts/section_guard.py"
+      - "scripts/test_section_guard.py"
+      - "scripts/requirements.txt"
+      - "assets/constellation-*.gif"
+      - "assets/constellation-*.png"
+      - "assets/moonbit-official.png"
+      - "data/icon-paths.json"
+      - "data/supplemental-icons.json"
+      - ".github/workflows/render-constellation.yml"
+  workflow_dispatch:
+    inputs:
+      section:
+        description: "Authorized section to regenerate (the other artwork is frozen)"
+        type: choice
+        default: frameworks
+        options: [frameworks, languages, tools, both]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: constellation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Keep Python bytecode outside the checkout
+        run: echo "PYTHONPYCACHEPREFIX=$RUNNER_TEMP/constellation-pycache" >> "$GITHUB_ENV"
+      - name: Install renderer dependencies
+        run: python -m pip install -r scripts/requirements.txt
+      - name: Select isolated section generation
+        id: selection
+        env:
+          REQUESTED: ${{ inputs.section }}
+          BEFORE: ${{ github.event.before }}
+        run: python scripts/section_guard.py select --before "$BEFORE" --requested "$REQUESTED"
+      - name: Record complete section-aware write and staging guard
+        env:
+          SECTION: ${{ steps.selection.outputs.section }}
+        run: python scripts/section_guard.py snapshot --section "$SECTION" --guard "$RUNNER_TEMP/constellation-guard.json"
+      - name: Render Languages and Markup only
+        if: steps.selection.outputs.section == 'languages' || steps.selection.outputs.section == 'both'
+        run: python scripts/render_sections.py --only languages
+      - name: Verify Languages content without rewriting frozen assets
+        run: |
+          python -m py_compile scripts/*.py
+          python scripts/verify_languages.py
+          python -m unittest discover -s scripts -p test_section_guard.py
+      - name: Render Frameworks only
+        if: steps.selection.outputs.section == 'frameworks' || steps.selection.outputs.section == 'both'
+        run: python scripts/render_sections.py --only frameworks
+      - name: Verify Frameworks content
+        env:
+          SECTION: ${{ steps.selection.outputs.section }}
+        run: |
+          extra=()
+          if [ "$SECTION" = frameworks ] || [ "$SECTION" = both ]; then extra+=(--determinism); fi
+          # Historical --protected pins the old Tools pair; the section-aware
+          # guard now owns cross-section writes. The content verifier is unchanged.
+          python scripts/verify_frameworks.py "${extra[@]}" --report "$RUNNER_TEMP/frameworks-verification.json"
+      - name: Render Tools only
+        if: steps.selection.outputs.section == 'tools'
+        run: python scripts/render_sections.py --only tools
+      - name: Verify Tools content and selected canonical determinism
+        env:
+          SECTION: ${{ steps.selection.outputs.section }}
+        run: |
+          extra=()
+          if [ "$SECTION" = tools ]; then extra+=(--determinism --protected); fi
+          python scripts/verify_tools.py "${extra[@]}" --report "$RUNNER_TEMP/tools-verification.json"
+      - name: Verify all unselected tracked files and output scope
+        run: |
+          python scripts/section_guard.py check --guard "$RUNNER_TEMP/constellation-guard.json"
+          git diff --check
+      - name: Record rendering environment
+        run: |
+          python - <<'PY'
+          import ctypes, hashlib, importlib.metadata, json, os, platform, sys
+          from pathlib import Path
+          import cairocffi
+          from PIL import features
+          ft = ctypes.CDLL('libfreetype.so.6')
+          handle = ctypes.c_void_p()
+          ft.FT_Init_FreeType(ctypes.byref(handle))
+          a,b,c = ctypes.c_int(),ctypes.c_int(),ctypes.c_int()
+          ft.FT_Library_Version(handle,ctypes.byref(a),ctypes.byref(b),ctypes.byref(c))
+          fonts = {str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in Path('/usr/share/fonts/truetype/dejavu').glob('DejaVuSans*.ttf')}
+          report = {'python':sys.version,'platform':platform.platform(),'cairo':cairocffi.cairo_version_string(),
+                    'system_freetype':[a.value,b.value,c.value],'pillow_freetype':features.version_module('freetype2'),
+                    'packages':{d.metadata['Name']:d.version for d in importlib.metadata.distributions()},'font_sha256':fonts}
+          Path(os.environ['RUNNER_TEMP']+'/render-environment.json').write_text(json.dumps(report,indent=2)+'\n')
+          print(json.dumps(report,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: constellation-verification-${{ github.sha }}
+          path: |
+            ${{ runner.temp }}/frameworks-verification.json
+            ${{ runner.temp }}/tools-verification.json
+            ${{ runner.temp }}/constellation-guard.json
+            ${{ runner.temp }}/render-environment.json
+          if-no-files-found: error
+      - name: Commit generated image assets
+        if: github.ref == 'refs/heads/feat/profile-particle-constellation-20261025'
+        env:
+          SECTION: ${{ steps.selection.outputs.section }}
+        run: |
+          sections=("$SECTION")
+          if [ "$SECTION" = both ]; then sections=(languages frameworks); fi
+          for section in "${sections[@]}"; do
+            git add "assets/constellation-${section}.gif" "assets/constellation-${section}.png"
+          done
+          python scripts/section_guard.py check --guard "$RUNNER_TEMP/constellation-guard.json"
+          if ! git diff --cached --quiet; then
+            remote_head=$(git ls-remote origin "refs/heads/${GITHUB_REF_NAME}" | cut -f1)
+            test "$remote_head" = "$GITHUB_SHA"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "chore(profile): render validated ${SECTION} constellations"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          else
+            echo "Validated assets already match the committed files."
+          fi

@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "baseline_commit": "7f88216d36366c67d9837626a131ae87b5c55a7d",
+  "method": "Rigid integer translation of immutable local RGB pixels; one sinusoidal scalar per logo, no orbit, rotation, resampling or particle pulse.",
+  "logos": [
+    {
+      "key": "postgresql",
+      "ax": 4,
+      "ay": 9,
+      "phase_turns": 0.0,
+      "harmonic": 1
+    },
+    {
+      "key": "docker",
+      "ax": -3,
+      "ay": 9,
+      "phase_turns": 0.1111111111111111,
+      "harmonic": 1
+    },
+    {
+      "key": "git",
+      "ax": 5,
+      "ay": 10,
+      "phase_turns": 0.2222222222222222,
+      "harmonic": 1
+    },
+    {
+      "key": "cloudflare",
+      "ax": -4,
+      "ay": 10,
+      "phase_turns": 0.3333333333333333,
+      "harmonic": 1
+    },
+    {
+      "key": "linux",
+      "ax": 3,
+      "ay": 10,
+      "phase_turns": 0.4444444444444444,
+      "harmonic": 1
+    },
+    {
+      "key": "vscode",
+      "ax": -5,
+      "ay": 10,
+      "phase_turns": 0.5555555555555556,
+      "harmonic": 1
+    },
+    {
+      "key": "blender",
+      "ax": 4,
+      "ay": 10,
+      "phase_turns": 0.6666666666666666,
+      "harmonic": 1
+    },
+    {
+      "key": "chatgpt",
+      "ax": -3,
+      "ay": 10,
+      "phase_turns": 0.7777777777777778,
+      "harmonic": 1
+    },
+    {
+      "key": "claude",
+      "ax": 5,
+      "ay": 10,
+      "phase_turns": 0.8888888888888888,
+      "harmonic": 1
+    }
+  ]
+}

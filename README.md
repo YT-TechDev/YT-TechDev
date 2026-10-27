@@ -1,36 +1,59 @@
-# Yuto / YT-TechDev
+<h1 align="center">YT-TechDev</h1>
 
-Yuto / YT-TechDev is an independent web and software developer building open-source projects around modern web development, local-first applications, developer tools, and AI-assisted engineering workflows.
+<p align="center">
+  Independent software developer building interactive systems, open-source developer tools and practical engineering workflows.
+</p>
 
-I work mainly with TypeScript, React, Next.js, React Three Fiber, and Three.js. I am also studying English, so I prefer clear, direct technical communication over marketing-heavy language.
+## Skill Constellation
+
+A small constellation of languages, frameworks and tools I build with or explore. Labels such as **Exploring** describe the context, not a proficiency score.
+
+### Languages & Markup
+
+<p align="center">
+  <img src="./assets/constellation-languages.gif" alt="Languages and markup particle constellation, arranged frontend to backend: HTML, CSS, JavaScript, TypeScript, VBScript, Python, Java, MoonBit (used in Web Interactive Flow), C++ and Rust (exploring). MoonBit uses contours traced from the official MoonBit logo." width="100%" />
+</p>
+
+### Frameworks & Runtimes
+
+<p align="center">
+  <img src="./assets/constellation-frameworks.gif" alt="Frameworks and runtimes particle constellation: React, Next.js, Node.js, R3F, Three.js, Vue.js, Google Apps Script, TailwindCSS, Bootstrap, Framer Motion, jQuery and Prisma." width="100%" />
+</p>
+
+### Tools & Platforms
+
+<p align="center">
+  <img src="./assets/constellation-tools.gif" alt="Tools particle constellation: PostgreSQL, Docker, Git, Cloudflare, Linux, VS Code, Blender, ChatGPT and Claude. ChatGPT and Claude are categorized as AI tools." width="100%" />
+</p>
+
+<p align="center"><sub>All particle stars remain legible; activity is described with labels instead of dimming learning interests. C++ / Rust: exploring. ChatGPT / Claude: AI tools.</sub></p>
+
+## Open-source engineering
+
+| Project | Focus |
+| :-- | :-- |
+| **[Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow)** | Deterministic interaction-flow runtime built with MoonBit and WebAssembly. |
+| **[Frontend Analysis](https://github.com/YT-TechDev/frontend-analysis)** | Browser-independent frontend analysis and diagnostics. |
+| **[R3F Interactive Flow](https://github.com/YT-TechDev/r3f-interactive-flow)** | Phase-based interaction controls for React Three Fiber experiences. |
+| **[Local Virtual Kit](https://github.com/YT-TechDev/local-virtual-kit)** | Local-first virtual character tooling with native tracking and web preview. |
 
 ## Current focus
 
-- Building small, maintainable OSS libraries and application foundations.
-- Exploring local-first desktop and web workflows with explicit privacy boundaries.
-- Designing predictable React and React Three Fiber architecture.
-- Improving documentation, validation habits, and AI-assisted development workflows.
+- Designing and maintaining developer tools, web runtimes and interactive experiences.
+- Reproducible workflows with clear responsibility and validation boundaries.
+- Documentation, architecture and long-term maintainability for open-source software.
 
-## Featured projects
+<p align="center">
+  <a href="https://github.com/YT-TechDev?tab=repositories">Explore repositories</a>
+  ·
+  <a href="https://yttechdev.com">Portfolio</a>
+</p>
 
-- [local-virtual-kit](https://github.com/YT-TechDev/local-virtual-kit) — Local-first VTuber and virtual character toolkit with a native tracking core, MotionFrame protocol, React Three Fiber web preview, and Electron desktop workflow.
-- [r3f-interactive-flow](https://github.com/YT-TechDev/r3f-interactive-flow) — A small control layer for phase-based interactive React Three Fiber sites, including flow state, transition progress, input hooks, and a Canvas frame bridge.
-- [agent-skills-lab](https://github.com/YT-TechDev/agent-skills-lab) — A public lab for designing, evaluating, versioning, and packaging reusable AI agent skills and engineering workflows.
-- [engineering-agents](https://github.com/YT-TechDev/engineering-agents) — Documentation-only guidance, templates, and checklists for scoped AI-assisted engineering planning and review workflows.
+<details>
+<summary>About the constellation and icon provenance</summary>
 
-## Selected technologies
+Images are generated offline from pinned technology icon outlines. Original SVG path data comes from [my portfolio's icon renderer](https://github.com/YT-TechDev/yt-techdev-portfolio/blob/6e4ea4fdbea13d57e7eb4f0f120452a2baf63a27/components/home/Skills/particle/svgPaths.ts), with additional and repaired paths from [Simple Icons](https://github.com/simple-icons/simple-icons) and [Devicon](https://github.com/devicons/devicon). The rounded TypeScript monogram and VBScript wordmark are illustrative. React Three Fiber, WebAssembly, ChatGPT and VS Code also use illustrative particle glyphs. MoonBit is traced from the official MoonBit documentation logo, not a custom moon/M symbol.
 
-- **Frontend:** TypeScript, React, Next.js, Tailwind CSS, Framer Motion
-- **3D and interactive web:** React Three Fiber, Three.js
-- **Backend and data:** Supabase, PostgreSQL, Resend
-- **Desktop and native:** Electron, Node.js, C++ development and learning
-- **Infrastructure:** Vercel, Cloudflare, Docker, Kubernetes fundamentals, AWS, Google Cloud
-- **Engineering:** OSS maintenance, library design, documentation systems, CI, local-first architecture, and AI-assisted development
+The source scripts and artwork live exclusively in this GitHub profile repository. GitHub README does not run TSX/WebGL; these are generated, non-interactive animations. See [the renderer documentation](./docs/constellation.md) for source pins, regeneration and limitations.
 
-## Development principles
-
-- Keep architecture clear and responsibilities separated.
-- Prefer predictable behavior over hidden convenience.
-- Treat documentation as part of the implementation.
-- Design libraries and workflows for long-term maintainability.
-- Use evidence-driven development: verify behavior, document assumptions, and avoid unsupported claims.
+</details>
