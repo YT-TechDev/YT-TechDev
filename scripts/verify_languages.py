@@ -62,6 +62,15 @@ def main():
         (800, 831),
     ), "Expected original two-row anchors plus centered Shell / BAT"
     assert cfg["positions"][-1] == (cfg["columns"][2], cfg["rows"][2])
+    shell = nodes[-1]
+    assert shell[0] == "shellbat", "Shell / BAT index changed"
+    shell_points = shell[-1]
+    shell_width = max(x for x, _ in shell_points) - min(x for x, _ in shell_points)
+    shell_height = max(y for _, y in shell_points) - min(y for _, y in shell_points)
+    # Optical normalization: nearby symbols occupy roughly a 110-130px span;
+    # keep the unframed prompt proportionate instead of filling its entire cell.
+    assert 110 <= shell_width <= 132, f"Shell / BAT too wide or narrow: {shell_width:.1f}"
+    assert 98 <= shell_height <= 113, f"Shell / BAT too tall or short: {shell_height:.1f}"
     bg = make_language_background(1060, SEED + len("languages") * 19, 1600)
     repeated_bg = make_language_background(1060, SEED + len("languages") * 19, 1600)
     assert ImageChops.difference(bg, repeated_bg).getbbox() is None, "Background seed is unstable"
@@ -153,6 +162,7 @@ def main():
     assert min(steps) > 0, "Animation contains a frozen transition"
     assert steps[-1] <= max(steps[:-1]) * 1.25, "Encoded GIF jumps at its seam"
     print("Languages: 11 names with original 5+5 anchors and centered third-row Shell / BAT; PNG verified")
+    print(f"Shell / BAT optical contour: {shell_width:.1f}x{shell_height:.1f}px")
     print("Typography: two TS / three VBS letter contours, no enclosing frames")
     print(f"Minimum moving-icon/label clearance: {min(gaps):.1f}px")
     print("GIF: 36 decoded frames, 1600x1060, 150ms/frame, 5.4s, infinite loop")

@@ -309,6 +309,11 @@ def prepared_nodes(section_id, cfg, originals, extras, *, wordmarks=True):
             # The TS glyph previously appeared smaller; round its raster edges
             # in the source sampler and normalize optical scale with label clearance.
             samples = [(x * 1.04, y * 1.04) for x, y in samples]
+        if key == "shellbat" and section_id == "languages":
+            # The sparse >_ prompt looked wider than the surrounding symbols.
+            # Match their optical footprint without altering particle order,
+            # count, motion, or the independently centered third-row anchor.
+            samples = [(x * .88, y * .88) for x, y in samples]
         if section_id == "languages":
             x, y = cfg["positions"][i]
         else:
