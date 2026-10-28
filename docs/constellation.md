@@ -370,3 +370,12 @@ Native-size images, decoded phases, loop transition, original-logo comparison, o
 - Verification also checks repeatable background pixels, dark backgrounds behind all ten icons and exact exposed-background stability across every decoded GIF frame. The 36-frame, 1600×780, 150ms/frame, 5.4s infinite loop and 18.7px minimum moving-icon/name clearance remain intact.
 - Local assets: GIF **3,841,553 bytes** (previously 6,277,441; approximately 39% smaller), PNG **162,994 bytes**. Encoded last-to-first mean RGB delta **2.2938**, below the interior maximum **2.8928**; rendered endpoints at 0 and 2π match exactly.
 - Visual review covers the PNG, decoded GIF frames 0/1/9/18/27/34/35, and 320px/375px previews. Physical-device playback and final aesthetic approval remain separate user review items.
+
+
+## Standalone header preview (2026-10-28)
+
+The README's former Markdown section headings are represented by three `h3` elements with static header PNGs carrying descriptive `alt` text. A separate cropped GIF retains only the original animated constellation below each header. This is an accessibility-conscious visual review experiment; the header's text is present in each `alt` attribute, and native heading semantics remain.
+
+`scripts/split_constellation_headers.py` generates `assets/constellation-{languages,frameworks,tools}-header.png` and `-body.gif` from the six unmodified approved sources. The split is at Y=120, preserving the source pixels exactly, every frame and timing, including the original footer. The generator independently verifies exact crop equality for all decoded frames and the static PNG. The original sources remain in the repository and continue to satisfy the existing content verifiers. This isolates the design preview from rendering/physics changes.
+
+The header and body are independent README images so Markdown/GitHub vertical spacing may be visible; inspect the rendered GitHub PR preview at desktop and mobile widths before approving. No deployment or merge is part of this preview.
