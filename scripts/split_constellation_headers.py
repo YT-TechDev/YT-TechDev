@@ -8,6 +8,7 @@ or motion function is changed.
 from __future__ import annotations
 
 import argparse
+import subprocess
 from pathlib import Path
 from PIL import Image, ImageChops
 
@@ -39,24 +40,17 @@ def generate(section):
         header = poster.convert("RGB").crop((0, 0, width, HEADER_HEIGHT))
         header.save(header_path, format="PNG", optimize=True)
 
-    with Image.open(original_path) as original:
-        assert original.size == size and original.n_frames == count
-        assert original.info.get("loop") == 0
-        original.seek(0)
-        color_table = original.getpalette()
-        assert color_table is not None, f"{section}: expected source GIF palette"
-        palette = Image.new("P", (1, 1))
-        palette.putpalette(color_table)
-        frames = []
-        for i in range(count):
-            original.seek(i)
-            assert original.info.get("duration") == duration, (section, i, "duration")
-            crop = original.convert("RGB").crop((0, HEADER_HEIGHT, width, height))
-            frames.append(crop.quantize(palette=palette, dither=Image.Dither.NONE))
-
-    frames[0].save(
-        body_path, format="GIF", save_all=True, append_images=frames[1:],
-        duration=duration, loop=0, disposal=2, optimize=True,
+    # Gifsicle preserves the original GIF color tables, timing and frame data;
+    # re-quantizing decoded RGB frames with Pillow changed approved colors.
+    # Crop before final verification, without resampling or dithering.
+    subprocess.run(
+        [
+            "gifsicle",
+            "--crop", f"0,{HEADER_HEIGHT}+{width}x{height-HEADER_HEIGHT}",
+            "--logical-screen", f"{width}x{height-HEADER_HEIGHT}",
+            str(original_path), "-o", str(body_path),
+        ],
+        check=True,
     )
     verify(section)
     print(f"{section}: header {width}x{HEADER_HEIGHT}, body {width}x{height-HEADER_HEIGHT}, "

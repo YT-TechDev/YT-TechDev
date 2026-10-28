@@ -30,8 +30,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install pinned Pillow dependency
-        run: python -m pip install -r scripts/requirements.txt
+      - name: Install pinned Pillow and GIF crop utility
+        run: |
+          python -m pip install -r scripts/requirements.txt
+          sudo apt-get update -qq
+          sudo apt-get install -y gifsicle
       - name: Ensure original constellation artwork is unchanged
         run: |
           git diff --exit-code origin/main -- \
