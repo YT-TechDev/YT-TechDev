@@ -11,7 +11,7 @@ A small constellation of languages, frameworks and tools I build with or explore
 ### Languages & Markup
 
 <p align="center">
-  <img src="./assets/constellation-languages.gif" alt="Languages and markup particle constellation, arranged frontend to backend: HTML, CSS, JavaScript, TypeScript, VBScript, Shell / BAT, Python, Java, MoonBit (used in Web Interactive Flow), C++ and Rust (exploring). MoonBit uses contours traced from the official MoonBit logo." width="100%" />
+  <img src="./assets/constellation-languages.gif" alt="Languages and markup particle constellation: HTML, CSS, JavaScript, TypeScript and VBScript in the first row; Python, Java, MoonBit (used in Web Interactive Flow), C++ and Rust (exploring) in the second row; Shell / BAT centered on a separate third row. MoonBit uses contours traced from the official MoonBit logo." width="100%" />
 </p>
 
 ### Frameworks & Runtimes

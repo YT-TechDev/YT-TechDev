@@ -31,18 +31,17 @@ ACTIVITY_BRIGHTNESS = {
 SECTIONS = {
     "languages": {
         "title": "01  /  LANGUAGES & MARKUP",
-        "subtitle": "FRONTEND & WEB  →  SCRIPTING  →  BACKEND & SYSTEMS",
+        "subtitle": "FRONTEND & WEB  →  BACKEND & SYSTEMS  →  SHELL & AUTOMATION",
         "width": 1600,
-        "height": 780,
+        "height": 1060,
         "columns": (164, 482, 800, 1118, 1436),
-        "rows": (231, 531),
-        # Keep existing sampling order/phase. Shift only first-row anchors
-        # to six columns; the second row remains at its approved positions.
-        # Shell / BAT is appended to preserve the other ten icon RNG samples.
+        "rows": (231, 531, 831),
+        # Keep the ten existing five-column anchors in both original rows;
+        # append the Shell / BAT motif in an isolated, centered third row.
         "positions": (
-            (145, 231), (405, 231), (665, 231), (925, 231), (1185, 231),
+            (164, 231), (482, 231), (800, 231), (1118, 231), (1436, 231),
             (164, 531), (482, 531), (800, 531), (1118, 531), (1436, 531),
-            (1445, 231),
+            (800, 831),
         ),
         "icons": [
             ("html", "HTML", "used", "#ffb081", "PROFESSIONAL"),
@@ -354,6 +353,8 @@ def render_frame(section_id, cfg, bg, nodes, phase, *, freeze=False):
         draw.text((43, 136), "WEB / FRONTEND  →  SCRIPTING",
                   fill=(93, 153, 184), font=font(17, True))
         draw.text((43, 434), "BACKEND  →  RUNTIME  →  SYSTEMS",
+                  fill=(93, 153, 184), font=font(17, True))
+        draw.text((43, 734), "SHELL SCRIPTING  /  AUTOMATION",
                   fill=(93, 153, 184), font=font(17, True))
 
     for i, (key, label, category, color, tag, x0, y0, points) in enumerate(nodes):
