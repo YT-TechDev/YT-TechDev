@@ -31,7 +31,7 @@ ACTIVITY_BRIGHTNESS = {
 SECTIONS = {
     "languages": {
         "title": "01  /  LANGUAGES & MARKUP",
-        "subtitle": "FRONTEND & WEB  →  BACKEND & SYSTEMS  →  SHELL & AUTOMATION",
+        "subtitle": "FRONTEND & WEB  →  BACKEND & SYSTEMS  →  OTHERS",
         "width": 1600,
         "height": 1060,
         "columns": (164, 482, 800, 1118, 1436),
@@ -359,7 +359,7 @@ def render_frame(section_id, cfg, bg, nodes, phase, *, freeze=False):
                   fill=(93, 153, 184), font=font(17, True))
         draw.text((43, 434), "BACKEND  →  RUNTIME  →  SYSTEMS",
                   fill=(93, 153, 184), font=font(17, True))
-        draw.text((43, 734), "SHELL SCRIPTING  /  AUTOMATION",
+        draw.text((43, 734), "OTHERS",
                   fill=(93, 153, 184), font=font(17, True))
 
     for i, (key, label, category, color, tag, x0, y0, points) in enumerate(nodes):
