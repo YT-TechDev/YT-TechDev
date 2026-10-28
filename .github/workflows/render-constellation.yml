@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - fix/profile-render-noop-20261028
       - feat/profile-particle-constellation-20261025
       - feat/profile-shell-bat-20261028
     paths:
@@ -80,6 +81,7 @@ jobs:
           BEFORE: ${{ github.event.before }}
         run: python scripts/section_guard.py select --before "$BEFORE" --requested "$REQUESTED"
       - name: Record complete section-aware write and staging guard
+        if: steps.selection.outputs.section != 'none'
         env:
           SECTION: ${{ steps.selection.outputs.section }}
         run: python scripts/section_guard.py snapshot --section "$SECTION" --guard "$RUNNER_TEMP/constellation-guard.json"
@@ -114,9 +116,17 @@ jobs:
           if [ "$SECTION" = tools ]; then extra+=(--determinism --protected); fi
           python scripts/verify_tools.py "${extra[@]}" --report "$RUNNER_TEMP/tools-verification.json"
       - name: Verify all unselected tracked files and output scope
+        if: steps.selection.outputs.section != 'none'
         run: |
           python scripts/section_guard.py check --guard "$RUNNER_TEMP/constellation-guard.json"
           git diff --check
+      - name: Verify validation-only run has no workspace writes
+        if: steps.selection.outputs.section == 'none'
+        run: |
+          git diff --exit-code
+          git diff --cached --exit-code
+          test -z "$(git ls-files --others --exclude-standard)"
+          echo "Validation only: all section verifiers and guard tests passed." >> "$GITHUB_STEP_SUMMARY"
       - name: Record rendering environment
         run: |
           python - <<'PY'

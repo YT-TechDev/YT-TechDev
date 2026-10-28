@@ -6,8 +6,9 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from section_guard import allowed_assets, check, select, snapshot, without_tools
+from section_guard import allowed_assets, check, main, select, snapshot, without_tools
 
 
 class SelectionTests(unittest.TestCase):
@@ -30,9 +31,59 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual(select({'scripts/verify_languages.py', 'scripts/verify_frameworks.py'}), 'both')
         for changed in ({'scripts/render_sections.py'}, {'scripts/requirements.txt'},
                         {'scripts/verify_tools.py', 'scripts/verify_frameworks.py'},
-                        {'.github/workflows/render-constellation.yml'}):
+                        {'scripts/unknown_renderer.py', 'assets/constellation-tools-centered.gif'}):
             with self.assertRaises(ValueError):
                 select(changed)
+
+    def test_non_render_diffs_are_validation_only(self):
+        # PR #4's actual production merge included these exact paths.
+        preview = {
+            'README.md', 'docs/centered-constellation-preview.md',
+            '.github/workflows/profile-centered-preview.yml',
+            'scripts/render_centered_constellation.py',
+            'assets/constellation-languages-centered.gif',
+            'assets/constellation-frameworks-centered.gif',
+            'assets/constellation-tools-centered.gif',
+        }
+        self.assertEqual(select(preview), 'none')
+        self.assertEqual(select(set()), 'none')
+        self.assertEqual(select({'assets/constellation-tools-centered.gif'}), 'none')
+        self.assertEqual(select({
+            'scripts/section_guard.py', 'scripts/test_section_guard.py',
+            '.github/workflows/render-constellation.yml',
+        }), 'none')
+        self.assertEqual(select(preview | {'assets/constellation-languages.gif'}), 'languages')
+        self.assertEqual(select(preview | {'scripts/tools_observatory.py'}), 'tools')
+        self.assertEqual(select({
+            'assets/constellation-frameworks.png',
+            'assets/constellation-languages.gif',
+        }), 'both')
+
+    def test_non_render_scope_fails_closed(self):
+        for unsafe in (
+            {'scripts/render_sections.py'}, {'scripts/render_constellation.py'},
+            {'scripts/requirements.txt'}, {'scripts/unknown_renderer.py'},
+            {'assets/constellation-tools-extra.gif'},
+            {'scripts/test_section_guard.py', 'scripts/requirements.txt'},
+            {'assets/constellation-languages-centered.gif', 'scripts/requirements.txt'},
+            {'assets/constellation-languages.gif', 'assets/constellation-tools.gif'},
+        ):
+            with self.subTest(unsafe=unsafe), self.assertRaises(ValueError):
+                select(unsafe)
+        self.assertEqual(select({'scripts/requirements.txt'}, requested='tools'), 'tools')
+
+    def test_cli_non_render_does_not_read_missing_historical_renderer(self):
+        with patch('sys.argv', ['section_guard.py', 'select', '--before', 'parent']), \
+             patch('section_guard.git', return_value=[
+                 'assets/constellation-languages-centered.gif',
+                 'scripts/section_guard.py',
+             ]), \
+             patch('section_guard.subprocess.check_output') as read_old, \
+             patch.dict(os.environ, {'GITHUB_OUTPUT': ''}), \
+             patch('builtins.print') as printed:
+            main()
+        read_old.assert_not_called()
+        printed.assert_called_once_with('No rendering required; validation only')
 
     def test_shared_tools_entrypoint_is_bounded(self):
         old = "SECTIONS = {'tools': {'height':810}, 'languages': {'height':780}}\n"
