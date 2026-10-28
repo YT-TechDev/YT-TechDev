@@ -8,23 +8,7 @@
 
 A small constellation of languages, frameworks and tools I build with or explore. Labels such as **Exploring** describe the context, not a proficiency score.
 
-### Languages & Markup
-
-<p align="center">
-  <img src="./assets/constellation-languages.gif" alt="Languages and markup particle constellation: HTML, CSS, JavaScript, TypeScript and VBScript in the first row; Python, Java, MoonBit (used in Web Interactive Flow), C++ and Rust (exploring) in the second row; Shell / BAT centered on a separate third row. MoonBit uses contours traced from the official MoonBit logo." width="100%" />
-</p>
-
-### Frameworks & Runtimes
-
-<p align="center">
-  <img src="./assets/constellation-frameworks.gif" alt="Frameworks and runtimes particle constellation: React, Next.js, Node.js, R3F, Three.js, Vue.js, Google Apps Script, TailwindCSS, Bootstrap, Framer Motion, jQuery and Prisma." width="100%" />
-</p>
-
-### Tools & Platforms
-
-<p align="center">
-  <img src="./assets/constellation-tools.gif" alt="Tools particle constellation: PostgreSQL, Docker, Git, Cloudflare, Linux, VS Code, Blender, ChatGPT and Claude. ChatGPT and Claude are categorized as AI tools." width="100%" />
-</p>
+<p align="center"><img src="./assets/constellation-languages-centered.gif" alt="01 — Languages & Markup particle constellation including Shell / BAT" width="100%" align="top" /><img src="./assets/constellation-frameworks-centered.gif" alt="02 — Frameworks & Runtimes particle constellation" width="100%" align="top" /><img src="./assets/constellation-tools-centered.gif" alt="03 — Tools & Platforms particle constellation" width="100%" align="top" /></p>
 
 <p align="center"><sub>All particle stars remain legible; activity is described with labels instead of dimming learning interests. C++ / Rust: exploring. ChatGPT / Claude: AI tools.</sub></p>
 
