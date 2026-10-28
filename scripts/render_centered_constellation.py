@@ -74,13 +74,22 @@ def decorate(indexed, colors, heading, subtitle):
     heading_size = round(50 * width / 1200)
     assert abs(heading_size / width - 50 / 1200) < 0.0003
     heading_font = ImageFont.truetype(font_bold, heading_size)
-    subtitle_font = ImageFont.truetype(font_regular, 17)
+    # Match subtitle optical size across the 1600px Languages art and
+    # 1200px Frameworks / Tools art when all images use README width=100%.
+    subtitle_size = round(22 * width / 1200)
+    subtitle_font = ImageFont.truetype(font_regular, subtitle_size)
     title_box = foreground.textbbox((center, 26), heading,
                                     font=heading_font, anchor="mt")
     subtitle_box = foreground.textbbox((center, 93), subtitle,
                                        font=subtitle_font, anchor="mt")
     assert title_box[0] > 24 and title_box[2] < width - 24, "Title too wide"
     assert title_box[3] < subtitle_box[1] - 2, "Title collides with subtitle"
+    assert subtitle_box[0] >= 24 and subtitle_box[2] <= width - 24, (
+        "Subtitle exceeds horizontal canvas bounds"
+    )
+    assert subtitle_box[3] <= SOURCE_HEADER_HEIGHT - 4, (
+        "Subtitle clips into particle/body image"
+    )
     foreground.text((center, 26), heading, fill=primary,
                     font=heading_font, anchor="mt")
     foreground.text((center, 93), subtitle, fill=secondary,
