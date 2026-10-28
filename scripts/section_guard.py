@@ -23,6 +23,18 @@ SHARED = {'scripts/render_sections.py', 'scripts/render_constellation.py',
           'scripts/requirements.txt', 'data/icon-paths.json', 'data/supplemental-icons.json'}
 
 
+# Only reviewed presentation/CI files may request validation without
+# regenerating canonical artwork. Unknown and shared inputs remain fail-closed.
+NON_RENDER_CHANGES = {
+    'README.md', 'docs/constellation.md',
+    'docs/centered-constellation-preview.md',
+    '.github/workflows/profile-centered-preview.yml',
+    '.github/workflows/render-constellation.yml',
+    'scripts/render_centered_constellation.py',
+    'scripts/section_guard.py', 'scripts/test_section_guard.py',
+} | {f'assets/constellation-{section}-centered.gif' for section in SECTIONS}
+
+
 def git(*args):
     return subprocess.check_output(['git', *args], text=True).splitlines()
 
@@ -88,9 +100,13 @@ def select(changed, requested=None, before_source=None, after_source=None):
             raise ValueError('Ambiguous shared-source change; explicit workflow_dispatch section is required')
     if identified == {'languages', 'frameworks'}:
         return 'both'
-    if len(identified) != 1:
-        raise ValueError('Ambiguous/no selected section; dispatch an explicit isolated section')
-    return identified.pop()
+    if len(identified) == 1:
+        return identified.pop()
+    # A presentation-only update needs verification, not a new renderer run.
+    # Never silently accept an unknown file or multi-section change.
+    if not identified and changed <= NON_RENDER_CHANGES:
+        return 'none'
+    raise ValueError('Ambiguous/no selected section; dispatch an explicit isolated section')
 
 
 def digest(path):
@@ -137,9 +153,17 @@ def main():
         if set(before) == {'0'}:
             before = 'HEAD^'
         changed = set(git('diff', '--name-only', before, 'HEAD'))
-        old = subprocess.check_output(['git', 'show', f'{before}:scripts/render_sections.py'], text=True)
-        selected = select(changed, args.requested, old, Path('scripts/render_sections.py').read_text())
-        print('Regenerating:', selected)
+        if 'scripts/render_sections.py' in changed:
+            # Only compare historical renderer code when that entrypoint
+            # actually changed. It may not exist in an older parent commit.
+            old = subprocess.check_output(
+                ['git', 'show', f'{before}:scripts/render_sections.py'], text=True)
+            new = Path('scripts/render_sections.py').read_text()
+        else:
+            old, new = None, None
+        selected = select(changed, args.requested, old, new)
+        print('No rendering required; validation only' if selected == 'none'
+              else f'Regenerating: {selected}')
         if os.environ.get('GITHUB_OUTPUT'):
             with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
                 output.write(f'section={selected}\n')
