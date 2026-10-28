@@ -127,6 +127,13 @@ def glyph_svg(key: str, originals: dict, extras: dict) -> str:
             outline += ('<path d="M9 2 H119" fill="none" stroke="white" '
                         'stroke-width="3.5" stroke-linecap="round"/>')
         return base + ' viewBox="0 0 128 128">' + outline + '</svg>'
+    if key == "shellbat":
+        # Original, vendor-neutral command-prompt motif for Shell / BAT.
+        # No terminal window or outer rectangular frame.
+        return (base + ' viewBox="0 0 128 112">'
+                '<path d="M23 22 L58 56 L23 90 M65 90 H105" '
+                'fill="none" stroke="white" stroke-width="7" '
+                'stroke-linecap="round" stroke-linejoin="round"/></svg>')
     if key == "vbscript":
         # Portfolio VBS artwork resembles a Visual Studio mark, so use a
         # neutral labeled wordmark instead of misattributing that trademark.

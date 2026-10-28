@@ -36,6 +36,14 @@ SECTIONS = {
         "height": 780,
         "columns": (164, 482, 800, 1118, 1436),
         "rows": (231, 531),
+        # Keep existing sampling order/phase. Shift only first-row anchors
+        # to six columns; the second row remains at its approved positions.
+        # Shell / BAT is appended to preserve the other ten icon RNG samples.
+        "positions": (
+            (145, 231), (405, 231), (665, 231), (925, 231), (1185, 231),
+            (164, 531), (482, 531), (800, 531), (1118, 531), (1436, 531),
+            (1445, 231),
+        ),
         "icons": [
             ("html", "HTML", "used", "#ffb081", "PROFESSIONAL"),
             ("css", "CSS", "used", "#8dd6ff", "PROFESSIONAL"),
@@ -47,6 +55,7 @@ SECTIONS = {
             ("moonbit", "MoonBit", "used", "#d2a7f5", "WIF RUNTIME"),
             ("cplusplus", "C++", "exploring", "#b8baff", "EXPLORING"),
             ("rust", "Rust", "exploring", "#edab8f", "EXPLORING"),
+            ("shellbat", "Shell / BAT", "used", "#8bcdf9", None),
         ],
     },
     "frameworks": {
@@ -152,7 +161,7 @@ def make_language_background(height: int, seed: int, width: int) -> Image.Image:
             quiet = max(
                 math.exp(-((u * width - cx) / 115) ** 4
                          - ((v * height - cy) / 110) ** 4)
-                for cx in cfg["columns"] for cy in cfg["rows"]
+                for cx, cy in cfg["positions"]
             )
             cloud_light *= 1 - .35 * quiet
             edge = max(.58, 1 - .28 * ((u - .5) ** 2 + (v - .5) ** 2))
@@ -169,7 +178,7 @@ def make_language_background(height: int, seed: int, width: int) -> Image.Image:
             return True
         return any(abs(x - cx) < 113 and (abs(y - cy) < 105
                    or abs(y - cy - 120) < 32)
-                   for cx in cfg["columns"] for cy in cfg["rows"])
+                   for cx, cy in cfg["positions"])
 
     # Dust follows the cloud density, not a uniform sheet of white noise.
     for _ in range(4200):
@@ -301,9 +310,12 @@ def prepared_nodes(section_id, cfg, originals, extras, *, wordmarks=True):
             # The TS glyph previously appeared smaller; round its raster edges
             # in the source sampler and normalize optical scale with label clearance.
             samples = [(x * 1.04, y * 1.04) for x, y in samples]
-        columns = cfg.get("columns", COLUMNS)
-        nodes.append((key, label, category, color, tag, columns[i % len(columns)],
-                      cfg["rows"][i // len(columns)], samples))
+        if section_id == "languages":
+            x, y = cfg["positions"][i]
+        else:
+            columns = cfg.get("columns", COLUMNS)
+            x, y = columns[i % len(columns)], cfg["rows"][i // len(columns)]
+        nodes.append((key, label, category, color, tag, x, y, samples))
     return nodes
 
 
@@ -462,7 +474,7 @@ def main():
     extras["paths"].update(extras["devicon_paths"])
     total = sum(len(s["icons"]) for s in SECTIONS.values())
     keys = [row[0] for section in SECTIONS.values() for row in section["icons"]]
-    if total != 31 or len(set(keys)) != total:
+    if total != 32 or len(set(keys)) != total:
         raise ValueError("Unexpected icon count or duplicate key")
     for section_id in ([args.only] if args.only else SECTIONS):
         defaults = {"languages": 36, "frameworks": 64, "tools": 48}

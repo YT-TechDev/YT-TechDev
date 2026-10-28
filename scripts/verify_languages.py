@@ -18,7 +18,7 @@ from render_sections import (
 
 NAMES = (
     "HTML", "CSS", "JavaScript", "TypeScript", "VBScript",
-    "Python", "Java", "MoonBit", "C++", "Rust",
+    "Python", "Java", "MoonBit", "C++", "Rust", "Shell / BAT",
 )
 
 
@@ -55,7 +55,12 @@ def main():
     nodes = prepared_nodes("languages", cfg, original, extra["paths"])
     assert tuple(node[1] for node in nodes) == NAMES, "Language order changed"
     assert cfg["columns"] == (164, 482, 800, 1118, 1436)
-    assert cfg["rows"] == (231, 531), "Expected five columns and two rows"
+    assert cfg["rows"] == (231, 531), "Language row levels changed"
+    assert cfg["positions"] == (
+        (145, 231), (405, 231), (665, 231), (925, 231), (1185, 231),
+        (164, 531), (482, 531), (800, 531), (1118, 531), (1436, 531),
+        (1445, 231),
+    ), "Expected six top-row and five bottom-row anchors"
     bg = make_language_background(780, SEED + len("languages") * 19, 1600)
     repeated_bg = make_language_background(780, SEED + len("languages") * 19, 1600)
     assert ImageChops.difference(bg, repeated_bg).getbbox() is None, "Background seed is unstable"
@@ -106,7 +111,7 @@ def main():
         assert ImageChops.difference(png.convert("RGB"), expected_png).getbbox() is None
         verify_wordmarks(png.convert("RGB"), nodes)
 
-    for index in range(10):
+    for index in range(len(nodes)):
         start = floating_offset(index, 0)
         end = floating_offset(index, math.tau)
         assert all(abs(a - b) < 1e-10 for a, b in zip(start, end)), "Position seam"
@@ -145,7 +150,7 @@ def main():
     steps = [distance(frames[i], frames[(i + 1) % 36]) for i in range(36)]
     assert min(steps) > 0, "Animation contains a frozen transition"
     assert steps[-1] <= max(steps[:-1]) * 1.25, "Encoded GIF jumps at its seam"
-    print("Languages: 10 names, no status labels/connectors; PNG verified")
+    print("Languages: 11 names (including Shell / BAT), no status labels/connectors; PNG verified")
     print("Typography: two TS / three VBS letter contours, no enclosing frames")
     print(f"Minimum moving-icon/label clearance: {min(gaps):.1f}px")
     print("GIF: 36 decoded frames, 1600x780, 150ms/frame, 5.4s, infinite loop")

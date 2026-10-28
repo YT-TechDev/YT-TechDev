@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feat/profile-particle-constellation-20261025
+      - feat/profile-shell-bat-20261028
     paths:
       - "scripts/render_constellation.py"
       - "scripts/render_sections.py"
@@ -74,7 +75,8 @@ jobs:
       - name: Select isolated section generation
         id: selection
         env:
-          REQUESTED: ${{ inputs.section }}
+          # This review branch changes shared renderer code; select only Languages.
+          REQUESTED: ${{ github.ref_name == 'feat/profile-shell-bat-20261028' && 'languages' || inputs.section }}
           BEFORE: ${{ github.event.before }}
         run: python scripts/section_guard.py select --before "$BEFORE" --requested "$REQUESTED"
       - name: Record complete section-aware write and staging guard
@@ -144,7 +146,7 @@ jobs:
             ${{ runner.temp }}/render-environment.json
           if-no-files-found: error
       - name: Commit generated image assets
-        if: github.ref == 'refs/heads/feat/profile-particle-constellation-20261025'
+        if: github.ref == 'refs/heads/feat/profile-particle-constellation-20261025' || github.ref == 'refs/heads/feat/profile-shell-bat-20261028'
         env:
           SECTION: ${{ steps.selection.outputs.section }}
         run: |
