@@ -4,19 +4,20 @@ This profile embeds generated GIFs, since GitHub README markdown cannot run Reac
 
 ## Layout and editorial choices
 
-The previous 20-node poster was difficult to read on phones, especially the bottom two rows. The three sections now contain **31 nodes** into three independently generated star maps:
+The previous 20-node poster was difficult to read on phones, especially the bottom two rows. The three sections now contain **32 nodes** into three independently generated star maps:
 
-- **Languages & Markup (10):** HTML, CSS, JavaScript, TypeScript, VBScript, Python, Java, MoonBit, C++, Rust (ordered from frontend/web through scripting toward backend/systems)
+- **Languages & Markup (11):** HTML, CSS, JavaScript, TypeScript, VBScript, Shell / BAT, Python, Java, MoonBit, C++, Rust (ordered from frontend/web through scripting toward backend/systems)
 - **Frameworks & Runtimes (12):** React, Next.js, Node.js, R3F, Three.js, Vue.js, Google Apps Script, TailwindCSS, Bootstrap, Framer Motion, jQuery, Prisma
 - **Tools & Platforms (9):** PostgreSQL, Docker, Git, Cloudflare, Linux, VS Code, Blender, ChatGPT, Claude
 
-Frameworks now uses **Quiet Orbits / Structure**, with two shared elliptical paths behind **twelve outline-particle symbols**. Tools now completes the story with **Station Grid / Space Station / Observatory**, one shared structure behind the original nine frozen particle silhouettes. The completed Languages image is a distinct 5-column × 2-row, 1600×780 layout, arranged for left-to-right frontend → backend reading. It displays only particle icons and language names, without secondary status labels or connector lines. Brightness is intentionally high across all groups and conveys **no proficiency ranking**. Internal activity metadata is retained: MoonBit is used in [Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow), based on the public MoonBit/WebAssembly runtime implementation; C++ and Rust remain Exploring. ChatGPT/Claude are explicitly AI tools, not programming languages.
+Frameworks now uses **Quiet Orbits / Structure**, with two shared elliptical paths behind **twelve outline-particle symbols**. Tools now completes the story with **Station Grid / Space Station / Observatory**, one shared structure behind the original nine frozen particle silhouettes. The Languages image has the original five frontend/web positions across row one, the original five backend/runtime/systems positions across row two, and a single centered Shell / BAT prompt in a separate third row (1600×1060). It displays only particle icons and language names, without secondary status labels or connector lines. Brightness is intentionally high across all groups and conveys **no proficiency ranking**. Internal activity metadata is retained: MoonBit is used in [Web Interactive Flow](https://github.com/YT-TechDev/web-interactive-flow), based on the public MoonBit/WebAssembly runtime implementation; C++ and Rust remain Exploring. ChatGPT/Claude are explicitly AI tools, not programming languages.
 
 ## Sources
 
 - Frozen portfolio outline dataset: `data/icon-paths.json` from `YT-TechDev/yt-techdev-portfolio` at `6e4ea4fdbea13d57e7eb4f0f120452a2baf63a27`.
 - Repaired TypeScript, PostgreSQL, Docker and Git outlines and other supplemental marks: `data/supplemental-icons.json` from Simple Icons pinned at `90646e4bf7f3b89df6c37e65baf3e7bc759a517c`.
 - MoonBit is extracted as **outline and interior-edge particle samples** from the official `moonbitlang/moonbit-docs` `next/_static/logo.png`, pinned to commit `50bbd2f59ba80ed046b6ecad57c7e8507ca06e9e` (repository copy `assets/moonbit-official.png`). The earlier illustrative crescent/M is no longer used for the Languages renderer.
+- Shell / BAT uses an original unframed >_ outline in pale cyan (not a vendor logo). All ten original two-row anchors and their sampling indices and motion phases are retained. The third-row center (800, 831) groups Shell scripting/automation independently of the frontend.
 - React / Next.js / R3F and VS Code / ChatGPT have illustrative symbols. Other normalized logo outlines come from the pinned sources.
 
 Neither RAOS nor Assembly are listed. The portfolio source is referenced, not mutated.

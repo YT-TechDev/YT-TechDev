@@ -18,7 +18,7 @@ from render_sections import (
 
 NAMES = (
     "HTML", "CSS", "JavaScript", "TypeScript", "VBScript",
-    "Python", "Java", "MoonBit", "C++", "Rust",
+    "Python", "Java", "MoonBit", "C++", "Rust", "Shell / BAT",
 )
 
 
@@ -55,9 +55,24 @@ def main():
     nodes = prepared_nodes("languages", cfg, original, extra["paths"])
     assert tuple(node[1] for node in nodes) == NAMES, "Language order changed"
     assert cfg["columns"] == (164, 482, 800, 1118, 1436)
-    assert cfg["rows"] == (231, 531), "Expected five columns and two rows"
-    bg = make_language_background(780, SEED + len("languages") * 19, 1600)
-    repeated_bg = make_language_background(780, SEED + len("languages") * 19, 1600)
+    assert cfg["height"] == 1060 and cfg["rows"] == (231, 531, 831), "Language row levels changed"
+    assert cfg["positions"] == (
+        (164, 231), (482, 231), (800, 231), (1118, 231), (1436, 231),
+        (164, 531), (482, 531), (800, 531), (1118, 531), (1436, 531),
+        (800, 831),
+    ), "Expected original two-row anchors plus centered Shell / BAT"
+    assert cfg["positions"][-1] == (cfg["columns"][2], cfg["rows"][2])
+    shell = nodes[-1]
+    assert shell[0] == "shellbat", "Shell / BAT index changed"
+    shell_points = shell[-1]
+    shell_width = max(x for x, _ in shell_points) - min(x for x, _ in shell_points)
+    shell_height = max(y for _, y in shell_points) - min(y for _, y in shell_points)
+    # Optical normalization: nearby symbols occupy roughly a 110-130px span;
+    # keep the unframed prompt proportionate instead of filling its entire cell.
+    assert 110 <= shell_width <= 132, f"Shell / BAT too wide or narrow: {shell_width:.1f}"
+    assert 98 <= shell_height <= 113, f"Shell / BAT too tall or short: {shell_height:.1f}"
+    bg = make_language_background(1060, SEED + len("languages") * 19, 1600)
+    repeated_bg = make_language_background(1060, SEED + len("languages") * 19, 1600)
     assert ImageChops.difference(bg, repeated_bg).getbbox() is None, "Background seed is unstable"
     # The icon field must stay dark even with the new stars, haze and dust.
     for _, _, _, _, _, x, y, _ in nodes:
@@ -78,7 +93,7 @@ def main():
     with patch.object(ImageDraw.ImageDraw, "text", record_text), \
          patch.object(ImageDraw.ImageDraw, "line", record_line):
         expected_png = render_frame("languages", cfg, bg, nodes, 0, freeze=True)
-    assert lines == [(43, 741, 1558, 741)], "Only the footer rule may remain"
+    assert lines == [(43, 1021, 1558, 1021)], "Only the footer rule may remain"
     drawn_text = [text for _, text, _ in texts]
     for tag in {node[4] for node in nodes if node[4]}:
         assert tag not in drawn_text, f"Secondary label displayed: {tag}"
@@ -96,17 +111,18 @@ def main():
         gap = box[1] - (y + max(py for _, py in points) + 10.5 + 1.8 + 1)
         assert gap >= 12, f"Floating icon can collide with {name}: {gap:.1f}px"
         assert x - 150 <= box[0] < box[2] <= x + 150, "Label leaves its column"
+        assert box[3] < cfg["height"] - 59, "Label interferes with footer"
         gaps.append(gap)
 
     png_path = ROOT / "assets/constellation-languages.png"
     with Image.open(png_path) as png:
         png.verify()
     with Image.open(png_path) as png:
-        assert png.size == (1600, 780)
+        assert png.size == (1600, 1060)
         assert ImageChops.difference(png.convert("RGB"), expected_png).getbbox() is None
         verify_wordmarks(png.convert("RGB"), nodes)
 
-    for index in range(10):
+    for index in range(len(nodes)):
         start = floating_offset(index, 0)
         end = floating_offset(index, math.tau)
         assert all(abs(a - b) < 1e-10 for a, b in zip(start, end)), "Position seam"
@@ -116,21 +132,21 @@ def main():
 
     frames = []
     with Image.open(ROOT / "assets/constellation-languages.gif") as gif:
-        assert gif.size == (1600, 780) and gif.n_frames == 36
+        assert gif.size == (1600, 1060) and gif.n_frames == 36
         assert gif.info.get("loop") == 0
         for index in range(gif.n_frames):
             gif.seek(index)
             assert gif.info.get("duration") == 150, "GIF timing changed"
             frame = gif.convert("RGB")
             frame.load()  # Fully decode every frame, including partial GIF frames.
-            assert frame.size == (1600, 780)
+            assert frame.size == (1600, 1060)
             frames.append(frame)
 
     # Decode real GIF pixels: a common palette must prevent haze/dust shimmer.
-    background_mask = Image.new("L", (1600, 780), 255)
+    background_mask = Image.new("L", (1600, 1060), 255)
     mask_draw = ImageDraw.Draw(background_mask)
     mask_draw.rectangle((0, 0, 1599, 159), fill=0)
-    mask_draw.rectangle((0, 730, 1599, 779), fill=0)
+    mask_draw.rectangle((0, 1010, 1599, 1059), fill=0)
     for _, _, _, _, _, x, y, _ in nodes:
         mask_draw.rectangle((x - 120, y - 110, x + 120, y + 110), fill=0)
         mask_draw.rectangle((x - 153, y + 90, x + 153, y + 150), fill=0)
@@ -145,10 +161,11 @@ def main():
     steps = [distance(frames[i], frames[(i + 1) % 36]) for i in range(36)]
     assert min(steps) > 0, "Animation contains a frozen transition"
     assert steps[-1] <= max(steps[:-1]) * 1.25, "Encoded GIF jumps at its seam"
-    print("Languages: 10 names, no status labels/connectors; PNG verified")
+    print("Languages: 11 names with original 5+5 anchors and centered third-row Shell / BAT; PNG verified")
+    print(f"Shell / BAT optical contour: {shell_width:.1f}x{shell_height:.1f}px")
     print("Typography: two TS / three VBS letter contours, no enclosing frames")
     print(f"Minimum moving-icon/label clearance: {min(gaps):.1f}px")
-    print("GIF: 36 decoded frames, 1600x780, 150ms/frame, 5.4s, infinite loop")
+    print("GIF: 36 decoded frames, 1600x1060, 150ms/frame, 5.4s, infinite loop")
     print("Cosmic background: deterministic, dark behind icons, no encoded shimmer")
     print(f"Loop pixel delta: {steps[-1]:.4f}; interior maximum: {max(steps[:-1]):.4f}")
     print("Asset and loop checks passed; visual review is a separate check")

@@ -31,11 +31,18 @@ ACTIVITY_BRIGHTNESS = {
 SECTIONS = {
     "languages": {
         "title": "01  /  LANGUAGES & MARKUP",
-        "subtitle": "FRONTEND & WEB  →  SCRIPTING  →  BACKEND & SYSTEMS",
+        "subtitle": "FRONTEND & WEB  →  BACKEND & SYSTEMS  →  OTHERS",
         "width": 1600,
-        "height": 780,
+        "height": 1060,
         "columns": (164, 482, 800, 1118, 1436),
-        "rows": (231, 531),
+        "rows": (231, 531, 831),
+        # Keep the ten existing five-column anchors in both original rows;
+        # append the Shell / BAT motif in an isolated, centered third row.
+        "positions": (
+            (164, 231), (482, 231), (800, 231), (1118, 231), (1436, 231),
+            (164, 531), (482, 531), (800, 531), (1118, 531), (1436, 531),
+            (800, 831),
+        ),
         "icons": [
             ("html", "HTML", "used", "#ffb081", "PROFESSIONAL"),
             ("css", "CSS", "used", "#8dd6ff", "PROFESSIONAL"),
@@ -47,6 +54,7 @@ SECTIONS = {
             ("moonbit", "MoonBit", "used", "#d2a7f5", "WIF RUNTIME"),
             ("cplusplus", "C++", "exploring", "#b8baff", "EXPLORING"),
             ("rust", "Rust", "exploring", "#edab8f", "EXPLORING"),
+            ("shellbat", "Shell / BAT", "used", "#8bcdf9", None),
         ],
     },
     "frameworks": {
@@ -152,7 +160,7 @@ def make_language_background(height: int, seed: int, width: int) -> Image.Image:
             quiet = max(
                 math.exp(-((u * width - cx) / 115) ** 4
                          - ((v * height - cy) / 110) ** 4)
-                for cx in cfg["columns"] for cy in cfg["rows"]
+                for cx, cy in cfg["positions"]
             )
             cloud_light *= 1 - .35 * quiet
             edge = max(.58, 1 - .28 * ((u - .5) ** 2 + (v - .5) ** 2))
@@ -169,7 +177,7 @@ def make_language_background(height: int, seed: int, width: int) -> Image.Image:
             return True
         return any(abs(x - cx) < 113 and (abs(y - cy) < 105
                    or abs(y - cy - 120) < 32)
-                   for cx in cfg["columns"] for cy in cfg["rows"])
+                   for cx, cy in cfg["positions"])
 
     # Dust follows the cloud density, not a uniform sheet of white noise.
     for _ in range(4200):
@@ -301,9 +309,17 @@ def prepared_nodes(section_id, cfg, originals, extras, *, wordmarks=True):
             # The TS glyph previously appeared smaller; round its raster edges
             # in the source sampler and normalize optical scale with label clearance.
             samples = [(x * 1.04, y * 1.04) for x, y in samples]
-        columns = cfg.get("columns", COLUMNS)
-        nodes.append((key, label, category, color, tag, columns[i % len(columns)],
-                      cfg["rows"][i // len(columns)], samples))
+        if key == "shellbat" and section_id == "languages":
+            # The sparse >_ prompt looked wider than the surrounding symbols.
+            # Match their optical footprint without altering particle order,
+            # count, motion, or the independently centered third-row anchor.
+            samples = [(x * .88, y * .88) for x, y in samples]
+        if section_id == "languages":
+            x, y = cfg["positions"][i]
+        else:
+            columns = cfg.get("columns", COLUMNS)
+            x, y = columns[i % len(columns)], cfg["rows"][i // len(columns)]
+        nodes.append((key, label, category, color, tag, x, y, samples))
     return nodes
 
 
@@ -342,6 +358,8 @@ def render_frame(section_id, cfg, bg, nodes, phase, *, freeze=False):
         draw.text((43, 136), "WEB / FRONTEND  →  SCRIPTING",
                   fill=(93, 153, 184), font=font(17, True))
         draw.text((43, 434), "BACKEND  →  RUNTIME  →  SYSTEMS",
+                  fill=(93, 153, 184), font=font(17, True))
+        draw.text((43, 734), "OTHERS",
                   fill=(93, 153, 184), font=font(17, True))
 
     for i, (key, label, category, color, tag, x0, y0, points) in enumerate(nodes):
@@ -462,7 +480,7 @@ def main():
     extras["paths"].update(extras["devicon_paths"])
     total = sum(len(s["icons"]) for s in SECTIONS.values())
     keys = [row[0] for section in SECTIONS.values() for row in section["icons"]]
-    if total != 31 or len(set(keys)) != total:
+    if total != 32 or len(set(keys)) != total:
         raise ValueError("Unexpected icon count or duplicate key")
     for section_id in ([args.only] if args.only else SECTIONS):
         defaults = {"languages": 36, "frameworks": 64, "tools": 48}
