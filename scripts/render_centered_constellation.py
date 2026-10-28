@@ -43,9 +43,15 @@ def indexed_frame(source):
     palette = Image.new("P", (1, 1))
     entries = [component for rgb in colors for component in rgb]
     palette.putpalette(entries + [0] * (768 - len(entries)))
-    indexed = source.quantize(palette=palette, dither=Image.Dither.NONE)
+    # Pillow's nearest-palette quantizer is not mathematically exact even
+    # when the palette already contains every source color. Map RGB tuples
+    # directly to indices to prevent any source-body pixel modifications.
+    lookup = {rgb: n for n, rgb in enumerate(colors)}
+    indexed = Image.new("P", source.size)
+    indexed.putpalette(palette.getpalette())
+    indexed.putdata([lookup[rgb] for rgb in source.getdata()])
     if ImageChops.difference(indexed.convert("RGB"), source).getbbox() is not None:
-        raise AssertionError("RGB colors changed when mapping to the exact input palette")
+        raise AssertionError("Exact color-index mapping changed source RGB")
     return indexed, colors
 
 
