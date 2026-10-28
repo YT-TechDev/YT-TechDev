@@ -8,23 +8,11 @@
 
 A small constellation of languages, frameworks and tools I build with or explore. Labels such as **Exploring** describe the context, not a proficiency score.
 
-<h3 align="center"><img src="./assets/constellation-languages-header.png" alt="Languages & Markup — section header" width="100%" /></h3>
+<h3 align="center"><img src="./assets/constellation-languages.gif" alt="Languages and markup particle constellation: HTML, CSS, JavaScript, TypeScript and VBScript in the first row; Python, Java, MoonBit (used in Web Interactive Flow), C++ and Rust (exploring) in the second row; Shell / BAT centered on a separate third row. MoonBit uses contours traced from the official MoonBit logo." width="100%" /></h3>
 
-<p align="center">
-  <img src="./assets/constellation-languages-body.gif" alt="Languages and markup particle constellation: HTML, CSS, JavaScript, TypeScript and VBScript in the first row; Python, Java, MoonBit (used in Web Interactive Flow), C++ and Rust (exploring) in the second row; Shell / BAT centered on a separate third row. MoonBit uses contours traced from the official MoonBit logo." width="100%" />
-</p>
+<h3 align="center"><img src="./assets/constellation-frameworks.gif" alt="Frameworks and runtimes particle constellation: React, Next.js, Node.js, R3F, Three.js, Vue.js, Google Apps Script, TailwindCSS, Bootstrap, Framer Motion, jQuery and Prisma." width="100%" /></h3>
 
-<h3 align="center"><img src="./assets/constellation-frameworks-header.png" alt="Frameworks & Runtimes — section header" width="100%" /></h3>
-
-<p align="center">
-  <img src="./assets/constellation-frameworks-body.gif" alt="Frameworks and runtimes particle constellation: React, Next.js, Node.js, R3F, Three.js, Vue.js, Google Apps Script, TailwindCSS, Bootstrap, Framer Motion, jQuery and Prisma." width="100%" />
-</p>
-
-<h3 align="center"><img src="./assets/constellation-tools-header.png" alt="Tools & Platforms — section header" width="100%" /></h3>
-
-<p align="center">
-  <img src="./assets/constellation-tools-body.gif" alt="Tools particle constellation: PostgreSQL, Docker, Git, Cloudflare, Linux, VS Code, Blender, ChatGPT and Claude. ChatGPT and Claude are categorized as AI tools." width="100%" />
-</p>
+<h3 align="center"><img src="./assets/constellation-tools.gif" alt="Tools particle constellation: PostgreSQL, Docker, Git, Cloudflare, Linux, VS Code, Blender, ChatGPT and Claude. ChatGPT and Claude are categorized as AI tools." width="100%" /></h3>
 
 <p align="center"><sub>All particle stars remain legible; activity is described with labels instead of dimming learning interests. C++ / Rust: exploring. ChatGPT / Claude: AI tools.</sub></p>
 
@@ -52,7 +40,7 @@ A small constellation of languages, frameworks and tools I build with or explore
 <details>
 <summary>About the constellation and icon provenance</summary>
 
-Section headers are static PNG crops of the approved section posters, and animated bodies are pixel-exact crops of the existing GIFs. The original artwork is retained unchanged. Images are generated offline from pinned technology icon outlines. Original SVG path data comes from [my portfolio's icon renderer](https://github.com/YT-TechDev/yt-techdev-portfolio/blob/6e4ea4fdbea13d57e7eb4f0f120452a2baf63a27/components/home/Skills/particle/svgPaths.ts), with additional and repaired paths from [Simple Icons](https://github.com/simple-icons/simple-icons) and [Devicon](https://github.com/devicons/devicon). The rounded TypeScript monogram and VBScript wordmark are illustrative. Shell / BAT uses an original, vendor-neutral prompt symbol (>_) with no window frame. React Three Fiber, WebAssembly, ChatGPT and VS Code also use illustrative particle glyphs. MoonBit is traced from the official MoonBit documentation logo, not a custom moon/M symbol.
+Images are generated offline from pinned technology icon outlines. Original SVG path data comes from [my portfolio's icon renderer](https://github.com/YT-TechDev/yt-techdev-portfolio/blob/6e4ea4fdbea13d57e7eb4f0f120452a2baf63a27/components/home/Skills/particle/svgPaths.ts), with additional and repaired paths from [Simple Icons](https://github.com/simple-icons/simple-icons) and [Devicon](https://github.com/devicons/devicon). The rounded TypeScript monogram and VBScript wordmark are illustrative. Shell / BAT uses an original, vendor-neutral prompt symbol (>_) with no window frame. React Three Fiber, WebAssembly, ChatGPT and VS Code also use illustrative particle glyphs. MoonBit is traced from the official MoonBit documentation logo, not a custom moon/M symbol.
 
 The source scripts and artwork live exclusively in this GitHub profile repository. GitHub README does not run TSX/WebGL; these are generated, non-interactive animations. See [the renderer documentation](./docs/constellation.md) for source pins, regeneration and limitations.
 
