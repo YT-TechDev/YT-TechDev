@@ -67,14 +67,20 @@ def decorate(indexed, colors, heading, subtitle):
     font_bold = str(FONT_DIR / "DejaVuSans-Bold.ttf")
     font_regular = str(FONT_DIR / "DejaVuSans.ttf")
     center = width // 2
-    # The identity/eyebrow line is deliberately omitted. Keep the title
-    # centered and increase it from 40 to 50px without moving the icons.
-    heading_font = ImageFont.truetype(font_bold, 50)
+    # The README displays every section at the same CSS width; Languages is
+    # 1600px wide, whereas Frameworks and Tools are 1200px. Equal source
+    # font sizes therefore render Languages at only 75% of their apparent
+    # size. Normalize by source canvas width (67 vs 50px).
+    heading_size = round(50 * width / 1200)
+    assert abs(heading_size / width - 50 / 1200) < 0.0003
+    heading_font = ImageFont.truetype(font_bold, heading_size)
     subtitle_font = ImageFont.truetype(font_regular, 17)
-    assert foreground.textbbox((center, 26), heading, font=heading_font,
-                               anchor="mt")[2] < width - 24
-    assert foreground.textbbox((center, 26), heading, font=heading_font,
-                               anchor="mt")[0] > 24
+    title_box = foreground.textbbox((center, 26), heading,
+                                    font=heading_font, anchor="mt")
+    subtitle_box = foreground.textbbox((center, 93), subtitle,
+                                       font=subtitle_font, anchor="mt")
+    assert title_box[0] > 24 and title_box[2] < width - 24, "Title too wide"
+    assert title_box[3] < subtitle_box[1] - 2, "Title collides with subtitle"
     foreground.text((center, 26), heading, fill=primary,
                     font=heading_font, anchor="mt")
     foreground.text((center, 93), subtitle, fill=secondary,
