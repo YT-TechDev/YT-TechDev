@@ -18,6 +18,15 @@ SOURCE_HEADER_HEIGHT = 120
 # The Languages footer rule begins at y=1021; remove it by cropping the
 # final 54px without redrawing the cosmic background or changing particles.
 LANGUAGES_FOOTER_TRIM = 54
+# Safe-frame experiment: trim only proven empty outer margins. The
+# Frameworks "Google Apps Script" label approaches the left edge, so its
+# borders are intentionally untouched. Existing particle/label positions
+# and color data within the retained region must be byte-pixel identical.
+HORIZONTAL_CROP = {
+    "languages": (24, 24),
+    "frameworks": (0, 0),
+    "tools": (20, 20),
+}
 
 SECTIONS = {
     "languages": (36, 150, "01  /  LANGUAGES & MARKUP",
@@ -115,6 +124,10 @@ def generate(section):
                 frame = frame.crop(
                     (0, 0, frame.width, frame.height - LANGUAGES_FOOTER_TRIM)
                 )
+            left, right = HORIZONTAL_CROP[section]
+            assert left >= 0 and right >= 0 and left + right < frame.width
+            if left or right:
+                frame = frame.crop((left, 0, frame.width - right, frame.height))
             frames.append(frame)
 
         # No optional global palette: local source RGBs are reconstructed for
@@ -133,7 +146,9 @@ def verify(section):
          Image.open(ASSETS / f"constellation-{section}-centered.gif") as output:
         expected_height = (source.height - LANGUAGES_FOOTER_TRIM
                            if section == "languages" else source.height)
-        assert output.size == (source.width, expected_height)
+        left, right = HORIZONTAL_CROP[section]
+        expected_width = source.width - left - right
+        assert output.size == (expected_width, expected_height)
         assert source.n_frames == output.n_frames == count
         assert source.info.get("loop") == output.info.get("loop") == 0
         header = None
@@ -142,7 +157,7 @@ def verify(section):
             output.seek(n)
             assert source.info.get("duration") == output.info.get("duration") == duration
             expected = source.convert("RGB").crop(
-                (0, SOURCE_HEADER_HEIGHT, source.width, expected_height))
+                (left, SOURCE_HEADER_HEIGHT, source.width - right, expected_height))
             actual = output.convert("RGB")
             bottom = actual.crop((0, SOURCE_HEADER_HEIGHT, output.width, output.height))
             if ImageChops.difference(expected, bottom).getbbox() is not None:
@@ -154,8 +169,14 @@ def verify(section):
                 raise AssertionError(f"{section}: static heading flickers in frame {n}")
     if section == "languages":
         assert expected_height == 1006, "Languages footer removal changed"
+        # At x=43 the Languages in-body lane headers begin; do not crop them.
+        assert left <= 24 and right <= 24, "Languages crop exceeds approved safety inset"
+    if section == "frameworks":
+        assert left == right == 0, "Frameworks outer Google Apps Script label at risk"
+    if section == "tools":
+        assert left <= 20 and right <= 20, "Tools outer station frame at risk"
     print(f"{section}: exact body preservation, heading stability, "
-          f"size {source.width}x{expected_height}, GIF timing PASS")
+          f"size {expected_width}x{expected_height}, GIF timing PASS")
 
 
 def main():
